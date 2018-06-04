@@ -1,0 +1,65 @@
+{
+  "name": "react-shopify",
+  "version": "0.0.1",
+  "description": "An opinionated library of React components built upon the Shopify Storefront API",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "react-scripts start",
+    "prebuild": "rimraf dist",
+    "build": "babel src/components -d dist",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject",
+    "flow": "flow"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inkOfPixel/react-shopify.git"
+  },
+  "keywords": [
+    "react",
+    "shopify",
+    "components",
+    "storefront-api"
+  ],
+  "author": "Massimo De Marchi <massimo@inkofpixel.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/inkOfPixel/react-shopify/issues"
+  },
+  "homepage": "https://github.com/inkOfPixel/react-shopify#readme",
+  "dependencies": {
+    "apollo-boost": "0.1.6",
+    "flow-bin": "0.73.0",
+    "graphql": "0.13.2",
+    "graphql-tag": "2.9.2",
+    "lodash": "4.17.10",
+    "react": "16.4.0",
+    "react-apollo": "2.1.4",
+    "react-dom": "16.4.0",
+    "react-scripts": "1.1.4",
+    "react-styleguidist": "7.0.16"
+  },
+  "devDependencies": {
+    "babel-cli": "6.26.0",
+    "babel-core": "6.26.3",
+    "babel-eslint": "8.2.3",
+    "babel-loader": "7.1.4",
+    "babel-plugin-transform-class-properties": "6.24.1",
+    "babel-plugin-transform-object-rest-spread": "6.26.0",
+    "babel-preset-env": "1.7.0",
+    "babel-preset-react": "6.24.1",
+    "clean-webpack-plugin": "0.1.19",
+    "eslint": "4.19.1",
+    "eslint-plugin-react": "7.9.1",
+    "prettier": "1.13.4",
+    "rimraf": "2.6.2",
+    "uglifyjs-webpack-plugin": "1.2.5",
+    "webpack": "4.10.2",
+    "webpack-cli": "^3.0.1",
+    "webpack-node-externals": "1.7.2"
+  }
+}
