@@ -17,3 +17,25 @@ yarn add -E react-shopify
 Licensed under the MIT License, Copyright © 2018-present inkOfPixel srl.
 
 See [LICENSE](./LICENSE) for more information.
+
+## Contributing
+
+All the developed components can be found under `src/commponents` directory, each organized in a separate folder that contains a bunch of stuff including markdown examples on component usage.
+
+To run a demo:
+
+```shell
+yarn demo
+```
+
+To preview the docs:
+
+```shell
+yarn docs
+```
+
+To release:
+
+```shell
+yarn release
+```
