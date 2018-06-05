@@ -1,8 +1,6 @@
-import Storefront from "./Storefront";
-export { default as Collection } from "./Collection";
-export { default as Products } from "./Products";
-export { default as SortBy } from "./SortBy";
-export { default as RefinementList } from "./RefinementList";
-export { default as Refinement } from "./Refinement";
-
-export default Storefront;
+export { default as Storefront } from "./Storefront/index";
+export { default as Collection } from "./Collection/index";
+export { default as Products } from "./Products/index";
+export { default as SortBy } from "./SortBy/index";
+export { default as RefinementList } from "./RefinementList/index";
+export { default as Refinement } from "./Refinement/index";

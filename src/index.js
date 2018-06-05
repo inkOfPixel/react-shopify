@@ -2,7 +2,8 @@
 
 import React from "react";
 import { render } from "react-dom";
-import Storefront, {
+import {
+  Storefront,
   Collection,
   Products,
   SortBy,

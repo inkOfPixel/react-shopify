@@ -1,6 +1,6 @@
 // @flow
 
-import React, { type Node, PureComponent, Fragment } from "react";
+import React, { type Node, PureComponent } from "react";
 import ApolloClient from "apollo-boost";
 import { ApolloProvider } from "react-apollo";
 
@@ -30,7 +30,7 @@ export default class Storefront extends PureComponent<Props> {
     const { children } = this.props;
     return (
       <ApolloProvider client={this.client}>
-        <Fragment>{children}</Fragment>
+        <React.Fragment>{children}</React.Fragment>
       </ApolloProvider>
     );
   }
