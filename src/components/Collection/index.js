@@ -12,7 +12,7 @@ import type {
   Refinement,
   SortBy
 } from "../types";
-import { getRefinedProductIds, sortByOptions, withNamedTags } from "../utils";
+import { getProducts, getRefinedProductIds, sortByOptions } from "../utils";
 
 type Range = {
   min: number,
@@ -39,9 +39,21 @@ type Props = {
   children: Node | Function,
   /** Initial Collection sort by: `MANUAL`, `BEST_SELLING`, `LEAST_SELLING`, `TITLE_ASCENDING`, `TITLE_DESCENDING`, `PRICE_ASCENDING`, `PRICE_DESCENDING`, `NEWEST_FIRST`, `OLDEST_FIRST`; */
   initialSortBy: SortBy,
+  /** Initial refinement: an object where each key is an attribute and the value represent the attribute refinement */
   initialRefinements: RefinementMap,
+  /** Initial graphql data. This is intended for server side and static rendering */
   initialData?: Object,
-  handle: string
+  /** Shopify collection handle */
+  handle: string,
+  /** Limit the number of fetched products */
+  limit: number,
+  /** Image options */
+  imageOptions?: {
+    maxWidth?: number,
+    maxHeight?: number,
+    crop?: "CENTER" | "TOP" | "BOTTOM" | "LEFT" | "RIGHT",
+    scale?: number
+  }
 };
 
 type ProviderProps = Props & {
@@ -61,11 +73,7 @@ class Provider extends PureComponent<ProviderProps, ProviderState> {
   static getDerivedStateFromProps(props: ProviderProps, state: ProviderState) {
     let changes = null;
     const data = props.query.data.shop ? props.query.data : props.initialData;
-    let products = data
-      ? data.shop.collectionByHandle.products.edges.map(edge =>
-          withNamedTags(edge.node)
-        )
-      : null;
+    let products = data ? getProducts(data) : null;
     if (products) {
       const refinedProductIds = getRefinedProductIds(
         products,
@@ -215,21 +223,87 @@ class Provider extends PureComponent<ProviderProps, ProviderState> {
   }
 }
 
+/**
+ * Provides context of a given collection to components like `Products`, `Refinement`, `RefinementList`, `SortBy`
+ */
 export default class Collection extends PureComponent<Props> {
   static query = gql`
     query CollectionQuery(
       $handle: String!
       $sortKey: ProductCollectionSortKeys
       $reverse: Boolean
+      $limit: Int!
+      $imageMaxWidth: Int
+      $imageMaxHeight: Int
+      $imageCrop: CropRegion
+      $imageScale: Int
     ) {
       shop {
         collectionByHandle(handle: $handle) {
-          products(first: 20, sortKey: $sortKey, reverse: $reverse) {
+          products(first: $limit, sortKey: $sortKey, reverse: $reverse) {
             edges {
               node {
+                availableForSale
                 id
                 title
+                description
+                descriptionHtml
+                handle
                 tags
+                vendor
+                priceRange {
+                  maxVariantPrice {
+                    amount
+                    currencyCode
+                  }
+                  minVariantPrice {
+                    amount
+                    currencyCode
+                  }
+                }
+                productType
+                publishedAt
+                variants(first: 250) {
+                  edges {
+                    node {
+                      id
+                      availableForSale
+                      compareAtPrice
+                      price
+                      title
+                      image {
+                        id
+                        altText
+                        transformedSrc(
+                          maxWidth: $imageMaxWidth
+                          maxHeight: $imageMaxHeight
+                          crop: $imageCrop
+                          scale: $imageScale
+                        )
+                      }
+                      selectedOptions {
+                        name
+                        value
+                      }
+                      sku
+                      title
+                    }
+                  }
+                }
+                images(first: 10) {
+                  edges {
+                    node {
+                      altText
+                      id
+                      transformedSrc(
+                        maxWidth: $imageMaxWidth
+                        maxHeight: $imageMaxHeight
+                        crop: $imageCrop
+                        scale: $imageScale
+                      )
+                    }
+                  }
+                }
               }
             }
           }
@@ -241,18 +315,24 @@ export default class Collection extends PureComponent<Props> {
   static defaultProps = {
     handle: "all",
     initialSortBy: "BEST_SELLING",
-    initialRefinements: {}
+    initialRefinements: {},
+    limit: 250
   };
 
   render() {
-    const { handle, initialSortBy } = this.props;
+    const { handle, initialSortBy, limit, imageOptions } = this.props;
     return (
       <Query
         query={Collection.query}
         variables={{
           handle: handle,
           sortKey: sortByOptions[initialSortBy].key,
-          reverse: sortByOptions[initialSortBy].reverse
+          reverse: sortByOptions[initialSortBy].reverse,
+          limit,
+          imageMaxWidth: imageOptions ? imageOptions.maxWidth : undefined,
+          imageMaxHeight: imageOptions ? imageOptions.maxHeight : undefined,
+          imageCrop: imageOptions ? imageOptions.crop : undefined,
+          imageScale: imageOptions ? imageOptions.scale : undefined
         }}
       >
         {query => <Provider {...this.props} query={query} />}

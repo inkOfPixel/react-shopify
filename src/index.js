@@ -15,8 +15,11 @@ import {
 
 const App = () => (
   <div>
-    <Storefront accessToken="a60505b6d8a3ac9c78c22719e7dcc4fe">
-      <Collection>
+    <Storefront
+      accessToken="a60505b6d8a3ac9c78c22719e7dcc4fe"
+      url="https://d-one-milano-dev.myshopify.com/api/graphql"
+    >
+      <Collection imageOptions={{ maxWidth: 200, maxHeight: 200 }}>
         <h1>Collection: all</h1>
         <SortBy>
           {({ sortBy, changeSortBy }) => (
@@ -46,11 +49,11 @@ const App = () => (
               {allValues.map(value => (
                 <div
                   style={{ fontWeight: value.isRefined ? "bold" : "normal" }}
+                  key={value.value}
                 >
                   <input
                     type="checkbox"
                     checked={value.isRefined}
-                    key={value.value}
                     onChange={event => toggle(value.value)}
                   />
                   {value.value} ({value.count}, {value.refinedCount})
@@ -68,14 +71,31 @@ const App = () => (
               return <div>{error.message}</div>;
             }
             return (
-              <ul>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  justifyContent: "center"
+                }}
+              >
                 {products.map(product => (
-                  <li key={product.title}>
+                  <div key={product.title} style={{ margin: "20px" }}>
+                    {Array.isArray(product.images) &&
+                    product.images.length > 0 ? (
+                      <div>
+                        <img
+                          src={product.images[0].transformedSrc}
+                          alt={product.images[0].altText}
+                        />
+                      </div>
+                    ) : (
+                      <p>No image available</p>
+                    )}
                     {product.title}
                     <div>{JSON.stringify(product.namedTags.color)}</div>
-                  </li>
+                  </div>
                 ))}
-              </ul>
+              </div>
             );
           }}
         </Products>
@@ -84,4 +104,10 @@ const App = () => (
   </div>
 );
 
-render(<App />, document.getElementById("root"));
+const container = document.getElementById("root");
+
+if (container === null) {
+  throw new Error("Could not find root container");
+}
+
+render(<App />, container);

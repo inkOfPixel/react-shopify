@@ -17,6 +17,23 @@ export const sortByOptions = {
   OLDEST_FIRST: { key: "CREATED", reverse: false }
 };
 
+export function getProducts(data: Object): null | Product[] {
+  return data
+    ? data.shop.collectionByHandle.products.edges.map(({ node }) => {
+        const product = {
+          ...node,
+          variants: node.variants
+            ? node.variants.edges.map(edge => edge.node)
+            : undefined,
+          images: node.images
+            ? node.images.edges.map(edge => edge.node)
+            : undefined
+        };
+        return withNamedTags(product);
+      })
+    : null;
+}
+
 export function getRefinedProductIds(
   products: Array<Product>,
   refinements: Array<Refinement>
@@ -61,7 +78,7 @@ export function getRefinedProductIds(
   return filteredProducts.map(product => product.id);
 }
 
-export function withNamedTags(product: Product): Product {
+function withNamedTags(product: Product): Product {
   return {
     ...product,
     namedTags: product.tags.reduce((obj, tag) => {

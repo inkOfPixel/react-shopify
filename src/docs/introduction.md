@@ -1,0 +1,1 @@
+React Shopify is an opinionated library of React components built upon the Shopify Storefront API. The purpose of the library is to simplify development of Shopify stores by abstracting away business logic.
