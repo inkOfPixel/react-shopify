@@ -7,7 +7,7 @@
     "demo": "react-scripts start",
     "prebuild": "rimraf dist",
     "build": "webpack",
-    "release": "np",
+    "release": "np --yolo",
     "test": "react-scripts test --env=jsdom",
     "flow": "flow",
     "docs": "styleguidist server",
