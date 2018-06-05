@@ -1,25 +1,46 @@
 // @flow
 
-import React, { PureComponent } from "react";
+import React, { type Node, PureComponent } from "react";
 import CollectionConsumer from "../Collection/CollectionConsumer";
-import { type Refinement as RefinementType } from "../types";
+import type {
+  Refinement as RefinementType,
+  EnumAttributeValue
+} from "../types";
 
 type Props = {
-  children: Function,
+  /** A function to which refinement props are passed and made available for render */
+  children: ({
+    allValues:
+      | Array<EnumAttributeValue<string>>
+      | Array<EnumAttributeValue<number>>,
+    refine: (value: string | number | boolean) => void,
+    clear: () => void
+  }) => Node,
+  /** Attribute to be refined. Accepts dot notation (e.g. `namedTag.color`) */
   attribute: string,
-  defaultRefinement: string | number | boolean
+  /** Default value for refinement */
+  defaultRefinement?: string | number | boolean
 };
 
 type ConsumerProps = Props & {
   context: {
     updateRefinement: RefinementType => void,
-    clearRefinement: RefinementType => void,
-    getValuesForAttribute: string => Array<string> | Array<number>
+    clearRefinement: (attribute: string) => void,
+    getValuesForAttribute: string =>
+      | Array<EnumAttributeValue<string>>
+      | Array<EnumAttributeValue<number>>
   }
 };
 
 class RefinementConsumer extends PureComponent<ConsumerProps> {
-  refine = (value: string | number) => {
+  componentDidMount() {
+    const { defaultRefinement } = this.props;
+    if (defaultRefinement) {
+      this.refine(defaultRefinement);
+    }
+  }
+
+  refine = (value: string | number | boolean) => {
     const {
       context: { updateRefinement },
       attribute
@@ -49,6 +70,7 @@ class RefinementConsumer extends PureComponent<ConsumerProps> {
   }
 }
 
+/** The `Refinement` component provides the logic to build a widget that will give the user the ability to choose a single value for a specific attribute. */
 const Refinement = (props: Props) => (
   <CollectionConsumer>
     {context => <RefinementConsumer {...props} context={context} />}

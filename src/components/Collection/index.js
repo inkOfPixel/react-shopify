@@ -45,7 +45,7 @@ type Props = {
   initialData?: Object,
   /** Shopify collection handle */
   handle: string,
-  /** Limit the number of fetched products */
+  /** Limit the number of fetched products (Max 250)*/
   limit: number,
   /** Image options */
   imageOptions?: {
@@ -58,7 +58,7 @@ type Props = {
 
 type ProviderProps = Props & {
   query: {
-    data: ?Object,
+    data: Object,
     loading: boolean,
     error: ?Error,
     refetch: (variables?: Object) => void

@@ -1,22 +1,33 @@
 // @flow
 
 import React, { PureComponent } from "react";
-import type { Refinement as RefinementType, RefinementMap } from "../types";
+import type {
+  Refinement as RefinementType,
+  RefinementMap,
+  EnumAttributeValue
+} from "../types";
 import CollectionConsumer from "../Collection/CollectionConsumer";
 
 type Props = {
+  /** A function to which refinement props are passed and made available for render */
   children: Function,
+  /** Attribute to be refined. Accepts dot notation (e.g. `namedTag.color`) */
   attribute: string,
+  /** Default value for refinement */
   defaultRefinement: Array<string> | Array<number>,
+  /** Operator to be applied: `and` means that the product must have each selected value, `or` when the product must have at least one of the selected values */
   operator: "and" | "or"
 };
 
 type ConsumerProps = Props & {
-  refinements: RefinementMap,
-  updateRefinement: RefinementType => void,
-  clearRefinement: RefinementType => void,
-  getAllValuesForAttribute: string => Array<string> | Array<number>,
-  getRefinedValuesForAttribute: string => Array<string> | Array<number>
+  context: {
+    refinements: RefinementMap,
+    updateRefinement: RefinementType => void,
+    clearRefinement: (attribute: string) => void,
+    getValuesForAttribute: string =>
+      | Array<EnumAttributeValue<string>>
+      | Array<EnumAttributeValue<number>>
+  }
 };
 
 class RefinementListConsumer extends PureComponent<ConsumerProps> {
@@ -31,6 +42,13 @@ class RefinementListConsumer extends PureComponent<ConsumerProps> {
       operator
     } = this.props;
     const refinement = refinements[attribute];
+    if (refinement.type !== "multiple") {
+      throw new Error(
+        `RefinementList received a refinement of type ${
+          refinement.type
+        } for attribute ${attribute}`
+      );
+    }
     let values = refinement ? refinement.values : [];
     if (values.includes(value)) {
       values = values.filter(refVal => refVal !== value);
@@ -62,7 +80,8 @@ class RefinementListConsumer extends PureComponent<ConsumerProps> {
   }
 }
 
-const RefinementList = props => (
+/** The `RefinementList` component provides the logic to build a widget that will give the user the ability to choose multiple values for a specific attribute. */
+const RefinementList = (props: Props) => (
   <CollectionConsumer>
     {context => <RefinementListConsumer {...props} context={context} />}
   </CollectionConsumer>

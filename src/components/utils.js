@@ -109,10 +109,24 @@ export function isNamedTag(tag: string): boolean {
 export function parseNamedTag(tag: string): ?NamedTag {
   const result = tag.match(namedTagRegExp);
   if (Array.isArray(result)) {
+    const name = result[1];
+    const type = result[2];
+    let value;
+    switch (type) {
+      case "number":
+        value = parseFloat(result[3]);
+        break;
+      case "boolean":
+        value = Boolean(result[3]);
+        break;
+      default:
+        value = result[3];
+        break;
+    }
     return {
-      name: result[1],
-      type: result[2],
-      value: result[3]
+      name,
+      type,
+      value
     };
   }
   return null;
