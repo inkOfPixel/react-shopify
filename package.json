@@ -1,14 +1,12 @@
 {
   "name": "react-shopify",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "description": "An opinionated library of React components built upon the Shopify Storefront API",
-  "main": "dist/react-shopify.cjs.js",
-  "module": "dist/react-shopify.esm.js",
-  "browser": "dist/react-shopify.umd.js",
+  "main": "dist/react-shopify.js",
   "scripts": {
     "start": "react-scripts start",
     "prebuild": "rimraf dist",
-    "build": "babel src/components -d dist",
+    "build": "webpack",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject",
     "flow": "flow",
@@ -47,7 +45,9 @@
   },
   "devDependencies": {
     "babel-cli": "6.26.0",
+    "babel-core": "6.26.3",
     "babel-eslint": "8.2.3",
+    "babel-loader": "7.1.4",
     "babel-plugin-external-helpers": "6.22.0",
     "babel-plugin-transform-class-properties": "6.24.1",
     "babel-plugin-transform-object-rest-spread": "6.26.0",
@@ -58,6 +58,8 @@
     "eslint-plugin-react": "7.9.1",
     "prettier": "1.13.4",
     "react-styleguidist": "7.0.16",
-    "rimraf": "2.6.2"
+    "rimraf": "2.6.2",
+    "webpack": "4.10.2",
+    "webpack-cli": "3.0.2"
   }
 }
