@@ -43,7 +43,7 @@ class RefinementListConsumer extends PureComponent<ConsumerProps> {
 
   toggle = (value: string | number) => {
     const {
-      context: { updateRefinement, refinements },
+      context: { clearRefinement, updateRefinement, refinements },
       attribute,
       operator
     } = this.props;
@@ -57,11 +57,16 @@ class RefinementListConsumer extends PureComponent<ConsumerProps> {
     }
     let values = refinement ? refinement.values : [];
     if (values.includes(value)) {
-      values = values.filter(refVal => refVal !== value);
+      if (values.length > 1) {
+        values = values.filter(refVal => refVal !== value);
+        updateRefinement({ attribute, type: "multiple", operator, values });
+      } else {
+        clearRefinement(attribute);
+      }
     } else {
       values = values.concat(value);
+      updateRefinement({ attribute, type: "multiple", operator, values });
     }
-    updateRefinement({ attribute, type: "multiple", operator, values });
   };
 
   clear = () => {

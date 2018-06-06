@@ -57,11 +57,14 @@ export function getRefinedProductIds(
               );
               return res;
             case "or":
-              return refinement.values.some(
-                refValue =>
-                  Array.isArray(value)
-                    ? value.includes(refValue)
-                    : value === refValue
+              return (
+                refinement.values.length === 0 ||
+                refinement.values.some(
+                  refValue =>
+                    Array.isArray(value)
+                      ? value.includes(refValue)
+                      : value === refValue
+                )
               );
             default:
               throw new Error(`Operator ${refinement.operator} not defined`);

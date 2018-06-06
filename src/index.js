@@ -88,7 +88,7 @@ const App = () => (
             </select>
           )}
         </Refinement>
-        <RefinementList attribute="namedTags.color" operator="and">
+        <RefinementList attribute="namedTags.color">
           {({ allValues, toggle, clear }) => (
             <div>
               {allValues.map(value => (
