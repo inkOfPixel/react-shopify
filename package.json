@@ -68,6 +68,7 @@
     "react-scripts": "1.1.4",
     "react-styleguidist": "7.0.16",
     "rimraf": "2.6.2",
+    "styled-components": "3.3.2",
     "webpack": "4.10.2",
     "webpack-cli": "3.0.2",
     "webpack-node-externals": "1.7.2"
