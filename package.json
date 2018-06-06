@@ -1,13 +1,13 @@
 {
   "name": "react-shopify",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "An opinionated library of React components built upon the Shopify Storefront API",
   "main": "dist/react-shopify.js",
   "scripts": {
     "demo": "react-scripts start",
     "prebuild": "rimraf dist",
     "build": "webpack",
-    "release": "np --yolo",
+    "release": "yarn build && np --yolo",
     "test": "react-scripts test --env=jsdom",
     "flow": "flow",
     "docs": "styleguidist server",
