@@ -1,6 +1,6 @@
 // @flow
 
-import React from "react";
+import React, { Fragment } from "react";
 import { render } from "react-dom";
 import {
   Storefront,
@@ -8,7 +8,8 @@ import {
   Products,
   SortBy,
   Refinement,
-  RefinementList
+  RefinementList,
+  CurrentRefinements
 } from "./components";
 
 // quick-sale-app: 02441eee1833a8937a0efee5ff732c2a
@@ -21,6 +22,50 @@ const App = () => (
     >
       <Collection imageOptions={{ maxWidth: 200, maxHeight: 200 }}>
         <h1>Collection: all</h1>
+        <CurrentRefinements>
+          {({ refinements, clear, clearAll }) => (
+            <Fragment>
+              <button onClick={clearAll}>clear all</button>
+              {refinements.map(refinement => {
+                switch (refinement.type) {
+                  case "single":
+                    return (
+                      <button
+                        key={`${refinement.attribute}-${refinement.value}`}
+                        onClick={() =>
+                          clear(refinement.attribute, refinement.value)
+                        }
+                      >
+                        {refinement.value}
+                      </button>
+                    );
+                  case "multiple":
+                    return refinement.values.map(value => (
+                      <button
+                        key={`${refinement.attribute}-${value}`}
+                        onClick={() => clear(refinement.attribute, value)}
+                      >
+                        {value}
+                      </button>
+                    ));
+                  case "range":
+                    return (
+                      <button
+                        key={`${refinement.attribute}-[${refinement.min}-${
+                          refinement.max
+                        }]`}
+                        onClick={() => clear(refinement.attribute)}
+                      >
+                        {refinement.min} - {refinement.max}
+                      </button>
+                    );
+                  default:
+                    return null;
+                }
+              })}
+            </Fragment>
+          )}
+        </CurrentRefinements>
         <SortBy>
           {({ sortBy, changeSortBy }) => (
             <select onChange={event => changeSortBy(event.currentTarget.value)}>

@@ -7,7 +7,7 @@ import type { SortBy as SortByType } from "../types";
 
 type Props = {
   /** A function to which sortBy props are passed and made available for render */
-  children: ({ sortBy: SortByType, changeSortBy: Function }) => Node
+  children: ({ sortBy: SortByType, changeSortBy: SortByType => void }) => Node
 };
 
 /** The `SortBy` component provides the logic to build a widget that will allow a user to change how the collection products are being sorted. */

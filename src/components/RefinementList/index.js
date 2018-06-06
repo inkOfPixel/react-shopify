@@ -1,6 +1,6 @@
 // @flow
 
-import React, { PureComponent } from "react";
+import React, { type Node, PureComponent } from "react";
 import type {
   Refinement as RefinementType,
   RefinementMap,
@@ -10,7 +10,13 @@ import CollectionConsumer from "../Collection/CollectionConsumer";
 
 type Props = {
   /** A function to which refinement props are passed and made available for render */
-  children: Function,
+  children: ({
+    toggle: (value: string | number) => void,
+    clear: () => void,
+    allValues:
+      | Array<EnumAttributeValue<string>>
+      | Array<EnumAttributeValue<number>>
+  }) => Node,
   /** Attribute to be refined. Accepts dot notation (e.g. `namedTag.color`) */
   attribute: string,
   /** Default value for refinement */
@@ -42,7 +48,7 @@ class RefinementListConsumer extends PureComponent<ConsumerProps> {
       operator
     } = this.props;
     const refinement = refinements[attribute];
-    if (refinement.type !== "multiple") {
+    if (refinement && refinement.type !== "multiple") {
       throw new Error(
         `RefinementList received a refinement of type ${
           refinement.type

@@ -28,6 +28,7 @@ type ProviderState = {
   error: ?Error,
   updateRefinement: Refinement => void,
   clearRefinement: (attribute: string) => void,
+  clearAllRefinements: () => void,
   changeSortBy: SortBy => void,
   getValuesForAttribute: (
     attribute: string
@@ -110,6 +111,7 @@ class Provider extends PureComponent<ProviderProps, ProviderState> {
       error: props.query.error,
       updateRefinement: this.updateRefinement,
       clearRefinement: this.clearRefinement,
+      clearAllRefinements: this.clearAllRefinements,
       changeSortBy: this.changeSortBy,
       getValuesForAttribute: this.getValuesForAttribute,
       getRangeForAttribute: this.getRangeForAttribute
@@ -195,6 +197,14 @@ class Provider extends PureComponent<ProviderProps, ProviderState> {
       delete newRefinements[attribute];
       return {
         refinements: newRefinements
+      };
+    });
+  };
+
+  clearAllRefinements = () => {
+    this.setState(currentState => {
+      return {
+        refinements: {}
       };
     });
   };
