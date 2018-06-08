@@ -9,7 +9,8 @@ import {
   SortBy,
   Refinement,
   RefinementList,
-  CurrentRefinements
+  CurrentRefinements,
+  Money
 } from "./components";
 
 // quick-sale-app: 02441eee1833a8937a0efee5ff732c2a
@@ -20,6 +21,11 @@ const App = () => (
       accessToken="a60505b6d8a3ac9c78c22719e7dcc4fe"
       url="https://d-one-milano-dev.myshopify.com/api/graphql"
     >
+      <Money defaultMoneyFormat="$ {{amount}}">24</Money>
+      <Money>24</Money>
+      <Money>
+        {format => <strong dangerouslySetInnerHTML={{ __html: format(24) }} />}
+      </Money>
       <Collection imageOptions={{ maxWidth: 200, maxHeight: 200 }}>
         <h1>Collection: all</h1>
         <CurrentRefinements>
@@ -115,6 +121,7 @@ const App = () => (
             if (error) {
               return <div>{error.message}</div>;
             }
+            console.log(products);
             return (
               <div
                 style={{
