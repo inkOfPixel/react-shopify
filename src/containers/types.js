@@ -10,11 +10,10 @@ export type SortKey =
   | "ID"
   | "RELEVANCE";
 
-export type EnumAttributeValue<T: string | number> = {
+export type CategoryAttributeValue<T: mixed> = {
   isRefined: boolean,
   value: T,
-  count: number,
-  refinedCount: number
+  count: number
 };
 
 type StringNamedTag = {
