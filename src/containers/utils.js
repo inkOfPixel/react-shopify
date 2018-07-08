@@ -1,8 +1,12 @@
 // @flow
 
 import get from "lodash/get";
-import type { CollectionProduct, CollectionState } from "./Collection/types";
-import type { CategoryAttributeValue } from "./types";
+import type {
+  CollectionProduct,
+  CollectionState,
+  Refinement
+} from "./Collection/types";
+import type { RefinementListAttributeItem } from "./types";
 
 export const getRefinedProducts = (
   collectionState: CollectionState
@@ -10,28 +14,56 @@ export const getRefinedProducts = (
   return collectionState.products || [];
 };
 
-export const getCategoryItems = (collectionState: CollectionState) => {
-  const occurenciesMap = {};
-  Object.entries(collectionState.refinementList || {}).forEach(
-    ([attribute, refinementList]) => {
-      const partialState = omitFilter(
-        collectionState,
-        "refinementList",
-        attribute
-      );
-      const partiallyRefinedProducts = getRefinedProducts(partialState);
-      const valueOccurrences = findAttributeValuesOccurences(
-        attribute,
-        partiallyRefinedProducts
-      );
-      occurenciesMap.refinementList = occurenciesMap.refinementList || {};
-      occurenciesMap.refinementList[attribute] = valueOccurrences;
-    }
+export const getRefinementListItems = (
+  collectionState: CollectionState,
+  attribute: string
+): RefinementListAttributeItem<mixed>[] => {
+  if (
+    !Array.isArray(collectionState.products) ||
+    collectionState.products.length === 0
+  ) {
+    return [];
+  }
+  const { refinements } = collectionState;
+  const allItemsCountMap = findAttributeValuesOccurences(
+    attribute,
+    collectionState.products
   );
-  return (
-    filterType: string,
-    attribute: string
-  ): CategoryAttributeValue<mixed>[] => {};
+  const refinedProducts = getRefinedProducts(collectionState);
+  const refinedCountMap = findAttributeValuesOccurences(
+    attribute,
+    refinedProducts
+  );
+  let countIfRefinedMap = refinedCountMap;
+  const refinedValues =
+    (refinements.RefinementList &&
+      refinements.RefinementList[attribute] &&
+      refinements.RefinementList[attribute].values.map(value =>
+        String(value)
+      )) ||
+    [];
+  if (
+    refinements.RefinementList &&
+    refinements.RefinementList[attribute] &&
+    refinements.RefinementList[attribute].operator === "or"
+  ) {
+    const partialCollectionState = omitFilter(
+      collectionState,
+      "RefinementList",
+      attribute
+    );
+    const partiallyRefinedProducts = getRefinedProducts(partialCollectionState);
+    countIfRefinedMap = findAttributeValuesOccurences(
+      attribute,
+      partiallyRefinedProducts
+    );
+  }
+  return Array.from(allItemsCountMap).map(([value, count]) => ({
+    isRefined: refinedValues.includes(value),
+    value,
+    refinedCount: refinedCountMap.get(value) || 0,
+    countIfRefined: countIfRefinedMap.get(value) || 0
+  }));
 };
 
 const omitFilter = (
@@ -39,14 +71,17 @@ const omitFilter = (
   filterType: string,
   attribute: string
 ): CollectionState => {
-  if (collectionState[filterType]) {
+  if (collectionState.refinements[filterType]) {
     const {
       [filterType]: { [attribute]: omit, ...filterKeep },
       ...keep
-    } = collectionState;
+    } = collectionState.refinements;
     return {
-      ...keep,
-      [filterType]: { ...filterKeep }
+      ...collectionState,
+      refinements: {
+        ...keep,
+        [filterType]: { ...filterKeep }
+      }
     };
   }
   return collectionState;
@@ -55,16 +90,14 @@ const omitFilter = (
 const findAttributeValuesOccurences = (
   attribute: string,
   products: CollectionProduct[]
-): { [value: mixed]: number } => {
+): Map<mixed, number> => {
   return products.reduce((occurrences, product) => {
     const value = get(product, attribute);
     if (typeof value === "string" || typeof value === "number") {
-      occurrences[value] = occurrences[value] || 0;
-      occurrences[value] += 1;
+      occurrences.set(value, (occurrences.get(value) || 0) + 1);
     } else if (Array.isArray(value)) {
       value.forEach(subValue => {
-        occurrences[subValue] = occurrences[subValue] || 0;
-        occurrences[subValue] += 1;
+        occurrences.set(subValue, (occurrences.get(subValue) || 0) + 1);
       });
     } else {
       throw new Error(
@@ -72,7 +105,7 @@ const findAttributeValuesOccurences = (
       );
     }
     return occurrences;
-  }, {});
+  }, new Map());
 };
 
 export function getRefinedProductIds(

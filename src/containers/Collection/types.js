@@ -22,13 +22,20 @@ export type CollectionContext = {
 
 export type CollectionState = {
   sortBy: SortBy,
-  refinementList?: {
-    [attribute: string]: RefinementList
-  },
-  range?: {
-    [attribute: string]: Range
+  refinements: {
+    RefinementList?: {
+      [attribute: string]: RefinementList
+    },
+    Range?: {
+      [attribute: string]: Range
+    }
   },
   products: ?Array<CollectionProduct>
+};
+
+export type Refinement = {
+  type: "RefinementList" | "Range",
+  attribute: string
 };
 
 export type RefinementList = {

@@ -10,10 +10,11 @@ export type SortKey =
   | "ID"
   | "RELEVANCE";
 
-export type CategoryAttributeValue<T: mixed> = {
+export type RefinementListAttributeItem<T: mixed> = {
   isRefined: boolean,
   value: T,
-  count: number
+  refinedCount: number,
+  countIfRefined: number
 };
 
 type StringNamedTag = {
