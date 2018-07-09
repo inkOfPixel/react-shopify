@@ -1,6 +1,6 @@
 // @flow
 
-import React, { type Node } from "react";
+import { type Node } from "react";
 import { withCollection } from "../Collection/";
 import type { CollectionContext, CollectionProduct } from "../Collection/types";
 import { getRefinedProducts } from "../utils";

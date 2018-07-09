@@ -1,17 +1,49 @@
 // @flow
 
 import get from "lodash/get";
+import memoizeOne from "memoize-one";
 import type {
   CollectionProduct,
   CollectionState,
-  Refinement
+  Refinement,
+  RefinementList
 } from "./Collection/types";
 import type { RefinementListAttributeItem } from "./types";
 
-export const getRefinedProducts = (
-  collectionState: CollectionState
-): CollectionProduct[] => {
-  return collectionState.products || [];
+export const getRefinedProducts = memoizeOne(
+  (collectionState: CollectionState): CollectionProduct[] => {
+    console.log("getRefinedProducts", collectionState);
+    const products = collectionState.products || [];
+    const { refinementList } = collectionState.refinements;
+    return products.filter(product => {
+      let matches = true;
+      if (refinementList) {
+        const refinementListEntries: Array<
+          [string, RefinementList]
+        > = (Object.entries(refinementList): any);
+        matches = refinementListEntries.every(([attribute, entry]) => {
+          const productAttributeValue = get(product, attribute);
+          if (entry.operator === "and") {
+            return entry.values.every(value =>
+              hasValue(productAttributeValue, value)
+            );
+          }
+          return (
+            entry.values.length === 0 ||
+            entry.values.some(value => hasValue(productAttributeValue, value))
+          );
+        });
+      }
+      return matches;
+    });
+  }
+);
+
+const hasValue = (object: mixed, value: mixed): boolean => {
+  if (Array.isArray(object)) {
+    return object.includes(value);
+  }
+  return object === value;
 };
 
 export const getRefinementListItems = (
@@ -36,20 +68,20 @@ export const getRefinementListItems = (
   );
   let countIfRefinedMap = refinedCountMap;
   const refinedValues =
-    (refinements.RefinementList &&
-      refinements.RefinementList[attribute] &&
-      refinements.RefinementList[attribute].values.map(value =>
+    (refinements.refinementList &&
+      refinements.refinementList[attribute] &&
+      refinements.refinementList[attribute].values.map(value =>
         String(value)
       )) ||
     [];
   if (
-    refinements.RefinementList &&
-    refinements.RefinementList[attribute] &&
-    refinements.RefinementList[attribute].operator === "or"
+    refinements.refinementList &&
+    refinements.refinementList[attribute] &&
+    refinements.refinementList[attribute].operator === "or"
   ) {
     const partialCollectionState = omitFilter(
       collectionState,
-      "RefinementList",
+      "refinementList",
       attribute
     );
     const partiallyRefinedProducts = getRefinedProducts(partialCollectionState);

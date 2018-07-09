@@ -41,6 +41,7 @@
     "graphql-tag": "2.9.2",
     "hoist-non-react-statics": "2.5.5",
     "lodash": "4.17.10",
+    "memoize-one": "4.0.0",
     "react-apollo": "2.1.4"
   },
   "peerDependencies": {

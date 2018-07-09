@@ -17,11 +17,13 @@ import type {
 
 type CollectionStateProp = {
   sortBy?: SortBy,
-  refinementList?: {
-    [attribute: string]: RefinementList
-  },
-  range?: {
-    [attribute: string]: Range
+  refinements?: {
+    refinementList?: {
+      [attribute: string]: RefinementList
+    },
+    range?: {
+      [attribute: string]: Range
+    }
   },
   products: ?Array<CollectionProduct>
 };
@@ -77,6 +79,7 @@ class CollectionProvider extends React.Component<WrappedProps, WrappedState> {
       collectionState: {
         sortBy: this.props.defaultSortBy,
         products,
+        refinements: {},
         ...this.props.collectionState
       }
     };
@@ -138,6 +141,7 @@ class CollectionProvider extends React.Component<WrappedProps, WrappedState> {
   }
 
   updateCollectionState = (changes: $Supertype<CollectionState>) => {
+    console.log("updateCollectionState", changes);
     if (this.isControlled("collectionState")) {
       const { collectionState } = this.getState();
       this.props.onCollectionStateChange({
@@ -151,7 +155,7 @@ class CollectionProvider extends React.Component<WrappedProps, WrappedState> {
           return {
             collectionState: {
               ...collectionState,
-              changes
+              ...changes
             }
           };
         },
@@ -318,9 +322,11 @@ export default class Collection extends React.PureComponent<Props> {
             collectionState={
               collectionState
                 ? {
-                    sortBy,
-                    products: null,
-                    ...collectionState
+                    sortBy: collectionState.sortBy || sortBy,
+                    products: collectionState.products || null,
+                    refinements: {
+                      ...collectionState.refinements
+                    }
                   }
                 : undefined
             }
