@@ -147,7 +147,6 @@ type RefinementItemsMap = {
 
 export const getRefinementItems = memoizeOne(
   (collectionState: CollectionState): RefinementItemsMap => {
-    console.log("getRefinementItems");
     const map = {
       refinementList: {}
     };
@@ -169,7 +168,6 @@ export const getRefinementItems = memoizeOne(
 export const removeUnusedRefinements = (
   collectionState: CollectionState
 ): CollectionState => {
-  console.log("removeUnusedRefinements");
   const refinementItems = getRefinementItems(collectionState);
   const { refinements } = collectionState;
   const refinementList = refinements.refinementList;
