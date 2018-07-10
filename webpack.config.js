@@ -3,7 +3,7 @@ const nodeExternals = require("webpack-node-externals");
 
 module.exports = {
   mode: "production",
-  entry: "./src/components/index.js",
+  entry: "./src/containers/index.js",
   output: {
     path: path.resolve(__dirname, "./dist"),
     filename: "react-shopify.js",
