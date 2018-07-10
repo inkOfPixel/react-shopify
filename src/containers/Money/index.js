@@ -3,7 +3,7 @@
 import React, { type Node, Component } from "react";
 import { Query } from "react-apollo";
 import gql from "graphql-tag";
-import memoize from "lodash/memoize";
+import memoizeOne from "memoize-one";
 
 type Props = {
   /** A string representing the money amount or a function that is called with the `format` function as an argument */
@@ -30,7 +30,7 @@ class Money extends Component<Props> {
     }
   `;
 
-  format = memoize((moneyFormat: string) => (value: string) =>
+  format = memoizeOne((moneyFormat: string) => (value: string) =>
     format(parseFloat(value) * 100, moneyFormat)
   );
 

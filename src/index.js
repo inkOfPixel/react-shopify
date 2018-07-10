@@ -1,160 +1,151 @@
 // @flow
 
-import React, { Fragment } from "react";
+import React from "react";
 import { render } from "react-dom";
 import {
   Storefront,
   Collection,
-  Products,
-  SortBy,
-  Refinement,
-  RefinementList,
   CurrentRefinements,
-  Money
-} from "./components";
+  Products,
+  RefinementList,
+  SortBy
+} from "./containers";
 
 // quick-sale-app: 02441eee1833a8937a0efee5ff732c2a
 
-const App = () => (
-  <div>
-    <Storefront
-      accessToken="a60505b6d8a3ac9c78c22719e7dcc4fe"
-      url="https://d-one-milano-dev.myshopify.com/api/graphql"
-    >
-      <Money defaultMoneyFormat="$ {{amount}}">24</Money>
-      <Money>24</Money>
-      <Money>
-        {format => <strong dangerouslySetInnerHTML={{ __html: format(24) }} />}
-      </Money>
-      <Collection imageOptions={{ maxWidth: 200, maxHeight: 200 }}>
-        <h1>Collection: all</h1>
-        <CurrentRefinements>
-          {({ refinements, clear, clearAll }) => (
-            <Fragment>
-              <button onClick={clearAll}>clear all</button>
-              {refinements.map(refinement => {
-                switch (refinement.type) {
-                  case "single":
-                    return (
-                      <button
-                        key={`${refinement.attribute}-${refinement.value}`}
-                        onClick={() =>
-                          clear(refinement.attribute, refinement.value)
-                        }
-                      >
-                        {refinement.value}
-                      </button>
-                    );
-                  case "multiple":
-                    return refinement.values.map(value => (
-                      <button
-                        key={`${refinement.attribute}-${value}`}
-                        onClick={() => clear(refinement.attribute, value)}
-                      >
-                        {value}
-                      </button>
-                    ));
-                  case "range":
-                    return (
-                      <button
-                        key={`${refinement.attribute}-[${refinement.min}-${
-                          refinement.max
-                        }]`}
-                        onClick={() => clear(refinement.attribute)}
-                      >
-                        {refinement.min} - {refinement.max}
-                      </button>
-                    );
-                  default:
-                    return null;
-                }
-              })}
-            </Fragment>
-          )}
-        </CurrentRefinements>
-        <SortBy>
-          {({ sortBy, changeSortBy }) => (
-            <select onChange={event => changeSortBy(event.currentTarget.value)}>
-              {Object.keys(SortBy.options).map(option => (
-                <option value={option} key={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          )}
-        </SortBy>
-        <Refinement attribute="namedTags.gender">
-          {({ allValues, refine, clear }) => (
-            <select onChange={event => refine(event.currentTarget.value)}>
-              {allValues.map(value => (
-                <option value={value.value} key={`ref-${value.value}`}>
-                  {value.value}
-                </option>
-              ))}
-            </select>
-          )}
-        </Refinement>
-        <RefinementList attribute="namedTags.color">
-          {({ allValues, toggle, clear }) => (
-            <div>
-              {allValues.map(value => (
-                <div
-                  style={{ fontWeight: value.isRefined ? "bold" : "normal" }}
-                  key={value.value}
+type Props = {};
+
+type State = {
+  collectionState: any
+};
+
+class App extends React.Component<Props, State> {
+  state = {
+    collectionState: {}
+  };
+
+  handleCollectionStateChange = (collectionState: any) => {
+    this.setState({ collectionState });
+  };
+
+  render() {
+    return (
+      <div>
+        <Storefront
+          accessToken="a60505b6d8a3ac9c78c22719e7dcc4fe"
+          url="https://d-one-milano-dev.myshopify.com/api/graphql"
+        >
+          <Collection
+            collectionState={this.state.collectionState}
+            onCollectionStateChange={this.handleCollectionStateChange}
+            imageOptions={{ maxWidth: 200, maxHeight: 200 }}
+          >
+            <h1>Collection: all</h1>
+            <strong>Sorting: </strong>
+            <SortBy>
+              {({ sortBy, changeSortBy }) => (
+                <select
+                  onChange={event => changeSortBy(event.currentTarget.value)}
+                  value={sortBy}
                 >
-                  <input
-                    type="checkbox"
-                    checked={value.isRefined}
-                    onChange={event => toggle(value.value)}
-                  />
-                  {value.value} ({value.count}, {value.refinedCount})
+                  {SortBy.options.map(option => (
+                    <option value={option} key={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </SortBy>
+            <br />
+            <strong>Applied refinements</strong>
+            <br />
+            <CurrentRefinements>
+              {({ refinements }) => <code>{JSON.stringify(refinements)}</code>}
+            </CurrentRefinements>
+            <br />
+            <strong>Refinements</strong>
+            <RefinementList attribute="namedTags.gender">
+              {({ items, toggle, clear }) => (
+                <div>
+                  {items.map(item => (
+                    <div
+                      style={{ fontWeight: item.isRefined ? "bold" : "normal" }}
+                      key={item.value}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={item.isRefined}
+                        onChange={event => toggle(item.value)}
+                      />
+                      {item.value} ({item.countIfRefined}, {item.refinedCount})
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </RefinementList>
-        <Products>
-          {({ products, loading, error }) => {
-            if (loading) {
-              return <div>Loading...</div>;
-            }
-            if (error) {
-              return <div>{error.message}</div>;
-            }
-            console.log(products);
-            return (
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  justifyContent: "center"
-                }}
-              >
-                {products.map(product => (
-                  <div key={product.title} style={{ margin: "20px" }}>
-                    {Array.isArray(product.images) &&
-                    product.images.length > 0 ? (
-                      <div>
-                        <img
-                          src={product.images[0].transformedSrc}
-                          alt={product.images[0].altText}
-                        />
+              )}
+            </RefinementList>
+            <br />
+            <RefinementList attribute="namedTags.color">
+              {({ items, toggle, clear }) => (
+                <div>
+                  {items.map(item => (
+                    <div
+                      style={{ fontWeight: item.isRefined ? "bold" : "normal" }}
+                      key={item.value}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={item.isRefined}
+                        onChange={event => toggle(item.value)}
+                      />
+                      {item.value} ({item.countIfRefined}, {item.refinedCount})
+                    </div>
+                  ))}
+                </div>
+              )}
+            </RefinementList>
+            <Products>
+              {({ products, loading, error }) => {
+                if (loading) {
+                  return <div>Loading...</div>;
+                }
+                if (error) {
+                  return <div>{error.message}</div>;
+                }
+                return (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      justifyContent: "center"
+                    }}
+                  >
+                    {products.map(product => (
+                      <div key={product.title} style={{ margin: "20px" }}>
+                        {Array.isArray(product.images) &&
+                        product.images.length > 0 ? (
+                          <div>
+                            <img
+                              src={product.images[0].transformedSrc}
+                              alt={product.images[0].altText}
+                            />
+                          </div>
+                        ) : (
+                          <p>No image available</p>
+                        )}
+                        {product.title}
+                        <div>{JSON.stringify(product.namedTags.color)}</div>
                       </div>
-                    ) : (
-                      <p>No image available</p>
-                    )}
-                    {product.title}
-                    <div>{JSON.stringify(product.namedTags.color)}</div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            );
-          }}
-        </Products>
-      </Collection>
-    </Storefront>
-  </div>
-);
+                );
+              }}
+            </Products>
+          </Collection>
+        </Storefront>
+      </div>
+    );
+  }
+}
 
 const container = document.getElementById("root");
 
