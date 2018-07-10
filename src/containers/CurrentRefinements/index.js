@@ -1,56 +1,82 @@
 // @flow
 
-import React, { type Node, PureComponent } from "react";
-import type { Refinement, RefinementMap } from "../types";
-import CollectionConsumer from "../Collection/CollectionConsumer";
+import React, { type Node } from "react";
+import type { CollectionContext, CollectionState } from "../Collection/types";
+import { withCollection } from "../Collection/";
+
+type RefinementTypes = "refinementList" | "range";
+
+type ClearOptions = {
+  value?: mixed
+};
 
 type Props = {
   /** A function to which refinement props are passed and made available for render */
   children: ({
-    refinements: Array<Refinement>,
-    clear: (attribute: string, value?: any) => void,
+    refinements: $PropertyType<CollectionState, "refinements">,
+    clear: (
+      type: RefinementTypes,
+      attribute: string,
+      options?: ClearOptions
+    ) => void,
     clearAll: () => void
-  }) => Node
+  }) => Node,
+  /** @ignore */
+  collection: CollectionContext
 };
 
-type ConsumerProps = Props & {
-  context: {
-    refinements: RefinementMap,
-    updateRefinement: Refinement => void,
-    clearRefinement: (attribute: string) => void,
-    clearAllRefinements: () => void
-  }
-};
-
-class CurrentRefinementsConsumer extends PureComponent<ConsumerProps> {
-  clear = (attribute: string, value?: any) => {
+/** The `CurrentRefinements` component provides the logic to build a widget that will give the user the ability to remove all or some of the filters that were set. */
+class CurrentRefinements extends React.Component<Props> {
+  clear = (
+    type: RefinementTypes,
+    attribute: string,
+    options?: ClearOptions = {}
+  ) => {
     const {
-      context: { updateRefinement, clearRefinement, refinements }
-    } = this.props;
-    if (value === undefined) {
-      clearRefinement(attribute);
-    }
-    const refinement = refinements[attribute];
-    if (refinement === undefined) {
-      throw new Error(`There is no refinement for attribute ${attribute}`);
-    }
-    switch (refinement.type) {
-      case "single":
-        if (refinement.value === value) {
-          clearRefinement(attribute);
-        }
-        break;
-      case "multiple":
-        if (refinement.values.includes(value)) {
-          if (refinement.values.length > 1) {
-            const values = refinement.values.filter(refVal => refVal !== value);
-            updateRefinement({
-              ...refinement,
-              values
+      collectionState: { refinements },
+      updateCollectionState
+    } = this.props.collection;
+    switch (type) {
+      case "refinementList":
+        if (
+          refinements.refinementList &&
+          refinements.refinementList[attribute]
+        ) {
+          if (options.value) {
+            updateCollectionState({
+              refinements: {
+                ...refinements,
+                refinementList: {
+                  ...refinements.refinementList,
+                  [attribute]: {
+                    ...refinements.refinementList[attribute],
+                    values: refinements.refinementList[attribute].values.filter(
+                      refValue => refValue !== options.value
+                    )
+                  }
+                }
+              }
             });
           } else {
-            clearRefinement(attribute);
+            const {
+              [attribute]: toBeRemoved,
+              ...other
+            } = refinements.refinementList;
+            updateCollectionState({
+              refinements: {
+                ...refinements,
+                refinementList: other
+              }
+            });
           }
+        }
+        break;
+      case "range":
+        if (refinements.range && refinements.range[attribute]) {
+          const { [attribute]: toBeRemoved, ...other } = refinements.range;
+          updateCollectionState({
+            refinements: { ...refinements, range: other }
+          });
         }
         break;
       default:
@@ -59,27 +85,22 @@ class CurrentRefinementsConsumer extends PureComponent<ConsumerProps> {
   };
 
   clearAll = () => {
-    this.props.context.clearAllRefinements();
+    this.props.collection.updateCollectionState({ refinements: {} });
   };
 
   render() {
     const {
-      context: { refinements },
+      collection: {
+        collectionState: { refinements }
+      },
       children
     } = this.props;
     return children({
-      refinements: Object.values(refinements),
+      refinements,
       clear: this.clear,
       clearAll: this.clearAll
     });
   }
 }
 
-/** The `CurrentRefinements` component provides the logic to build a widget that will give the user the ability to remove all or some of the filters that were set. */
-const CurrentRefinements = (props: Props) => (
-  <CollectionConsumer>
-    {context => <CurrentRefinementsConsumer {...props} context={context} />}
-  </CollectionConsumer>
-);
-
-export default CurrentRefinements;
+export default withCollection(CurrentRefinements);

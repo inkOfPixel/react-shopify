@@ -6,6 +6,7 @@ import gql from "graphql-tag";
 import isEqual from "lodash/isEqual";
 import { Provider } from "./Context";
 import { sortByOptions, getProducts } from "./utils";
+import { removeUnusedRefinements } from "../utils";
 import type {
   CollectionProduct,
   CollectionState,
@@ -101,10 +102,12 @@ class CollectionProvider extends React.Component<WrappedProps, WrappedState> {
         }
       }
 
-      this.props.onCollectionStateChange({
-        ...combinedState.collectionState,
-        collectionStateChanges
-      });
+      if (Object.keys(collectionStateChanges).length > 0) {
+        this.props.onCollectionStateChange({
+          ...combinedState.collectionState,
+          ...collectionStateChanges
+        });
+      }
     } else {
       this.setState((currentState: WrappedState, props: WrappedProps) => {
         const currentCombinedState = this.getState(currentState);
@@ -141,22 +144,23 @@ class CollectionProvider extends React.Component<WrappedProps, WrappedState> {
   }
 
   updateCollectionState = (changes: $Supertype<CollectionState>) => {
-    console.log("updateCollectionState", changes);
     if (this.isControlled("collectionState")) {
       const { collectionState } = this.getState();
-      this.props.onCollectionStateChange({
-        ...collectionState,
-        ...changes
-      });
+      this.props.onCollectionStateChange(
+        removeUnusedRefinements({
+          ...collectionState,
+          ...changes
+        })
+      );
     } else {
       this.setState(
         currentState => {
           const { collectionState } = this.getState(currentState);
           return {
-            collectionState: {
+            collectionState: removeUnusedRefinements({
               ...collectionState,
               ...changes
-            }
+            })
           };
         },
         () => {

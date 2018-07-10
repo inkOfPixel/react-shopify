@@ -5,14 +5,12 @@ import memoizeOne from "memoize-one";
 import type {
   CollectionProduct,
   CollectionState,
-  Refinement,
   RefinementList
 } from "./Collection/types";
 import type { RefinementListAttributeItem } from "./types";
 
 export const getRefinedProducts = memoizeOne(
   (collectionState: CollectionState): CollectionProduct[] => {
-    console.log("getRefinedProducts", collectionState);
     const products = collectionState.products || [];
     const { refinementList } = collectionState.refinements;
     return products.filter(product => {
@@ -50,6 +48,7 @@ export const getRefinementListItems = (
   collectionState: CollectionState,
   attribute: string
 ): RefinementListAttributeItem<mixed>[] => {
+  // console.log("getRefinementItems");
   if (
     !Array.isArray(collectionState.products) ||
     collectionState.products.length === 0
@@ -140,49 +139,68 @@ const findAttributeValuesOccurences = (
   }, new Map());
 };
 
-export function getRefinedProductIds(
-  products: Array<Product>,
-  refinements: Array<Refinement>
-): Array<string> {
-  const filteredProducts = products.filter(product => {
-    return refinements.every(refinement => {
-      const value = get(product, refinement.attribute);
-      switch (refinement.type) {
-        case "single":
-          return Array.isArray(value)
-            ? value.includes(refinement.value)
-            : value === refinement.value;
-        case "multiple":
-          switch (refinement.operator) {
-            case "and":
-              const res = refinement.values.every(
-                refValue =>
-                  Array.isArray(value)
-                    ? value.includes(refValue)
-                    : value === refValue
-              );
-              return res;
-            case "or":
-              return (
-                refinement.values.length === 0 ||
-                refinement.values.some(
-                  refValue =>
-                    Array.isArray(value)
-                      ? value.includes(refValue)
-                      : value === refValue
-                )
-              );
-            default:
-              throw new Error(`Operator ${refinement.operator} not defined`);
-          }
-        case "range":
-          throw new Error(
-            `Refinement of type ${refinement.type} not implemented`
+type RefinementItemsMap = {
+  refinementList: {
+    [attribute: string]: RefinementListAttributeItem<mixed>[]
+  }
+};
+
+export const getRefinementItems = memoizeOne(
+  (collectionState: CollectionState): RefinementItemsMap => {
+    console.log("getRefinementItems");
+    const map = {
+      refinementList: {}
+    };
+    const { refinements } = collectionState;
+    if (refinements.refinementList) {
+      Object.entries(refinements.refinementList).forEach(
+        ([attribute, refinementList]) => {
+          map.refinementList[attribute] = getRefinementListItems(
+            collectionState,
+            attribute
           );
-        default:
-          throw new Error(`Invalid type for refinement (${refinement.type})`);
+        }
+      );
+    }
+    return map;
+  }
+);
+
+export const removeUnusedRefinements = (
+  collectionState: CollectionState
+): CollectionState => {
+  console.log("removeUnusedRefinements");
+  const refinementItems = getRefinementItems(collectionState);
+  const { refinements } = collectionState;
+  const refinementList = refinements.refinementList;
+  let newRefinements = { ...refinements };
+  let hasChanges = false;
+  if (refinementList) {
+    Object.keys(refinementList).forEach(attribute => {
+      const refinableItems = refinementItems.refinementList[attribute]
+        .filter(item => item.refinedCount > 0)
+        .reduce((map, item) => {
+          map.set(item.value, item);
+          return map;
+        }, new Map());
+      const values = refinementList[attribute].values.filter(
+        value => refinableItems.get(value) !== undefined
+      );
+
+      if (values.length !== refinementList[attribute].values.length) {
+        hasChanges = true;
+        newRefinements.refinementList = {
+          ...newRefinements.refinementList,
+          [attribute]: {
+            ...newRefinements.refinementList[attribute],
+            values
+          }
+        };
       }
     });
-  });
-  return filteredProducts.map(product => product.id);
-}
+  }
+  if (hasChanges) {
+    return { ...collectionState, refinements: newRefinements };
+  }
+  return collectionState;
+};

@@ -1,6 +1,6 @@
 // @flow
 
-import React, { type Node, PureComponent } from "react";
+import React, { type Node } from "react";
 import ApolloClient from "apollo-boost";
 import { ApolloProvider } from "react-apollo";
 
@@ -13,7 +13,7 @@ type Props = {
 };
 
 /** **Required** context provider for every React Shopify component. This should be placed at the root of the app */
-export default class Storefront extends PureComponent<Props> {
+export default class Storefront extends React.Component<Props> {
   static defaultProps = {
     url: "/api/graphql"
   };

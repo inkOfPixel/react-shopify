@@ -79,6 +79,7 @@ export function parseNamedTag(tag: string): ?NamedTag {
         value = result[3];
         break;
     }
+    // $FlowFixMe
     return {
       name,
       type,

@@ -53,9 +53,7 @@ class RefinementList extends React.Component<Props> {
       refinements.refinementList[attribute].values.push(value);
     }
 
-    console.log("toggle");
     collection.updateCollectionState({
-      ...collection.collectionState,
       refinements
     });
   };

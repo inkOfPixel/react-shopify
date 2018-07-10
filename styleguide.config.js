@@ -1,17 +1,17 @@
 const path = require("path");
-const {
-  version
-} = require("./package.json");
+const { version } = require("./package.json");
 
 module.exports = {
   title: `React Shopify v${version}`,
-  components: "src/components/[A-Z]*/index.js",
+  components: "src/containers/[A-Z]*/index.js",
   showUsage: true,
   webpackConfig: require("./webpack.config.js"),
   styleguideDir: "docs",
-  sections: [{
+  sections: [
+    {
       name: "Basics",
-      sections: [{
+      sections: [
+        {
           name: "Introduction",
           content: "src/docs/introduction.md"
         },
@@ -27,11 +27,11 @@ module.exports = {
     },
     {
       name: "Components",
-      components: "src/components/[A-Z]*/index.js"
+      components: "src/containers/[A-Z]*/index.js"
     }
   ],
   styleguideComponents: {
-    LogoRenderer: path.join(__dirname, 'styleguidist/Logo'),
+    LogoRenderer: path.join(__dirname, "styleguidist/Logo")
   },
   theme: {
     color: {
