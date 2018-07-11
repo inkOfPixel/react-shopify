@@ -10,6 +10,7 @@ type Props = {
   /** A function to which refinement props are passed and made available for render */
   children: ({
     toggle: (value: mixed) => void,
+    set: (values: mixed[]) => void,
     clear: () => void,
     items: Array<RefinementListAttributeItem<mixed>>
   }) => Node,
@@ -27,6 +28,17 @@ type Props = {
 class RefinementList extends React.Component<Props> {
   static defaultProps = {
     operator: "or"
+  };
+
+  set = (values: mixed[]) => {
+    const { attribute, operator, collection } = this.props;
+    const refinements = { ...collection.collectionState.refinements };
+    refinements.refinementList = refinements.refinementList || {};
+    refinements.refinementList[attribute] = { operator, values };
+
+    collection.updateCollectionState({
+      refinements
+    });
   };
 
   toggle = (value: mixed) => {
@@ -75,6 +87,7 @@ class RefinementList extends React.Component<Props> {
   render() {
     const { children, attribute, collection } = this.props;
     return children({
+      set: this.set,
       toggle: this.toggle,
       clear: this.clear,
       items: getRefinementListItems(collection.collectionState, attribute)
