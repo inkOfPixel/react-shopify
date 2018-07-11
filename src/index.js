@@ -44,16 +44,21 @@ class App extends React.Component<Props, State> {
             <strong>Sorting: </strong>
             <SortBy>
               {({ sortBy, changeSortBy }) => (
-                <select
-                  onChange={event => changeSortBy(event.currentTarget.value)}
-                  value={sortBy}
-                >
-                  {SortBy.options.map(option => (
-                    <option value={option} key={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
+                <React.Fragment>
+                  <select
+                    onChange={event => changeSortBy(event.currentTarget.value)}
+                    value={sortBy}
+                  >
+                    {SortBy.options.map(option => (
+                      <option value={option} key={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  <br />
+                  <code>{JSON.stringify(sortBy)}</code>
+                  <br />
+                </React.Fragment>
               )}
             </SortBy>
             <br />
