@@ -1,22 +1,17 @@
-// @flow
-
-import React, { type Node } from "react";
+import * as React from "react";
 import ApolloClient from "apollo-boost";
 import { ApolloProvider } from "react-apollo";
 
-type Props = {
-  children: Node,
+interface Props {
+  children: React.ReactNode;
   /** Shopify Storefront API access token */
-  accessToken: string,
-  /** Specify the endpoint of the store graphql api */
-  url: string
-};
+  accessToken: string;
+  /** Endpoint of your store GraphQL API */
+  url: string;
+}
 
-/** **Required** context provider for every React Shopify component. This should be placed at the root of the app */
-export default class Storefront extends React.Component<Props> {
-  static defaultProps = {
-    url: "/api/graphql"
-  };
+export default class Storefront extends React.Component<Props, {}> {
+  static defaultProps = { url: "/api/graphql" };
 
   client = new ApolloClient({
     uri: this.props.url,
