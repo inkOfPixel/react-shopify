@@ -26,10 +26,6 @@ export default class Storefront extends React.Component<Props, {}> {
 
   render() {
     const { children } = this.props;
-    return (
-      <ApolloProvider client={this.client}>
-        <React.Fragment>{children}</React.Fragment>
-      </ApolloProvider>
-    );
+    return <ApolloProvider client={this.client}>{children}</ApolloProvider>;
   }
 }

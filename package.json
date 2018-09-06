@@ -38,11 +38,12 @@
     "@babel/polyfill": "7.0.0"
   },
   "peerDependencies": {
-    "react": ">=16.3.0",
-    "react-dom": ">=16.3.0",
+    "apollo-boost": "0.1.15",
     "graphql": "14.0.0",
+    "graphql-tag": "2.9.2",
+    "react": ">=16.3.0",
     "react-apollo": "2.1.11",
-    "apollo-boost": "0.1.15"
+    "react-dom": ">=16.3.0"
   },
   "devDependencies": {
     "@babel/core": "7.0.0",
@@ -57,6 +58,7 @@
     "apollo-boost": "0.1.15",
     "docz": "0.11.0",
     "graphql": "14.0.0",
+    "graphql-tag": "2.9.2",
     "prettier": "1.14.2",
     "react": "16.4.2",
     "react-apollo": "2.1.11",
