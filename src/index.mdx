@@ -3,11 +3,18 @@ name: Home
 route: /
 ---
 
+import { Playground, PropsTable } from "docz";
+import Storefront from "./components/Storefront";
+import Collection from "./components/Collection";
+import Products from "./components/Products";
+
 # React Shopify
 
 React Shopify is an opinionated library of React components built upon the Shopify Storefront API. The purpose of the library is to simplify development of Shopify stores by abstracting away business logic.
 
 ## Install
+
+> NOTE: require also peer deps ⚠️
 
 ```bash
 yarn add -E react-shopify
@@ -16,3 +23,19 @@ yarn add -E react-shopify
 ```bash
 npm i -E react-shopify
 ```
+
+React Shopify requires React 16.3+ as it uses new React Context API.
+
+## Basic usage
+
+<Playground>
+  <Storefront
+    accessToken="078bc5caa0ddebfa89cccb4a1baa1f5c"
+    url="https://graphql.myshopify.com/api/graphql"
+  >
+    <Collection handle="summer-collection" limit={3}>
+      <Products></Products>
+    </Collection>
+  </Storefront>
+</Playground>
+

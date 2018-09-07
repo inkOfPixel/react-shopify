@@ -1,8 +1,18 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import { Query, QueryResult } from "react-apollo";
-import { createNamedContext } from "../../utils";
+import { get } from "lodash";
 import { ApolloError } from "apollo-boost";
+import {
+  Provider,
+  ICollectionState,
+  ICollectionContext,
+  SortBy,
+  Refinement,
+  IRefinementList,
+  IRefinementRange
+} from "./Context";
+import { assertNever } from "../../utils";
 
 // enum SortKey {
 //   Manual = "MANUAL",
@@ -17,47 +27,6 @@ import { ApolloError } from "apollo-boost";
 
 type Partial<T> = { [P in keyof T]?: T[P] };
 
-enum SortBy {
-  Manual = "MANUAL",
-  BestSelling = "BEST_SELLING",
-  LeastSelling = "LEAST_SELLING",
-  TitleAscending = "TITLE_ASCENDING",
-  TitleDescending = "TITLE_DESCENDING",
-  PriceAscending = "PRICE_ASCENDING",
-  PriceDescending = "PRICE_DESCENDING",
-  NewestFirst = "NEWEST_FIRST",
-  OldestFirst = "OLDEST_FIRST"
-}
-
-interface IRefinementList {
-  kind: "list";
-  attribute: string;
-  values: string;
-}
-
-interface IRefinementRange {
-  kind: "range";
-  attribute: string;
-  range: string;
-}
-
-type Refinement = IRefinementList | IRefinementRange;
-
-interface ICollectionState {
-  sortBy: SortBy;
-  refinements: Array<Refinement>;
-}
-
-interface ICollectionContext {
-  collectionState: ICollectionState;
-  data: {
-    shop?: Storefront.IShop;
-  };
-  loading: boolean;
-  error: ApolloError | undefined;
-  updateRefinement: (refinement: Refinement) => void;
-}
-
 interface QueryVariables {
   handle: string;
   limit: number;
@@ -65,15 +34,14 @@ interface QueryVariables {
   reverse: boolean;
 }
 
-const CollectionContext = createNamedContext(
-  "Collection",
-  {} as ICollectionContext
-);
-
 interface IProps {
   children: React.ReactNode;
+  /** You can use this to setup the initial state. All the keys are optional */
   initialCollectionState?: Partial<ICollectionState>;
+  /** Shopify collection handle */
   handle: string;
+  /** Number of products to be fetched at a time */
+  limit?: number;
   /** By default it fetches only id and title */
   productFragment?: string;
 }
@@ -93,7 +61,8 @@ export default class Collection extends React.Component<IProps, IState> {
     initialCollectionState: {
       sortBy: SortBy.Manual,
       refinements: []
-    }
+    },
+    limit: 20
   };
 
   static sortByOptions = {
@@ -121,6 +90,7 @@ export default class Collection extends React.Component<IProps, IState> {
             products(first: $limit, sortKey: $sortKey, reverse: $reverse) {
               edges {
                 node {
+                  id
                   ...CollectionProduct
                 }
               }
@@ -143,16 +113,14 @@ export default class Collection extends React.Component<IProps, IState> {
   };
 
   render() {
-    const { children, handle, initialCollectionState } = this.props;
+    const { children, handle, limit, initialCollectionState } = this.props;
     const { key, reverse } = Collection.sortByOptions[
       (initialCollectionState as ICollectionState).sortBy
     ];
     return (
       <Query
         query={this.state.query}
-        variables={
-          { handle, limit: 10, sortKey: key, reverse } as QueryVariables
-        }
+        variables={{ handle, limit, sortKey: key, reverse } as QueryVariables}
       >
         {({ data, loading, error, refetch }) => (
           <CollectionImpl
@@ -187,24 +155,72 @@ class CollectionImpl extends React.Component<IImplProps, IImplState> {
     collectionState: this.props.initialCollectionState
   };
 
-  updateRefinement = (refinement: Refinement) => {};
+  setRefinement = (refinement: Refinement) => {
+    throw new Error("Not implemented");
+  };
+
+  clearRefinement = (kind: string, attribute: string) => {
+    throw new Error("Not implemented");
+  };
 
   getContext = (): ICollectionContext => {
     const { data, loading, error } = this.props;
+    const productEdges = get(data.shop, "collectionByHandle.products.edges") as
+      | Storefront.IProductEdge[]
+      | undefined;
     return {
       collectionState: this.state.collectionState,
-      data,
+      products: productEdges ? productEdges.map(edge => edge.node) : [],
       loading,
       error,
-      updateRefinement: this.updateRefinement
+      setRefinement: this.setRefinement,
+      clearRefinement: this.clearRefinement
     };
   };
 
   render() {
-    return (
-      <CollectionContext.Provider value={this.getContext()}>
-        {this.props.children}
-      </CollectionContext.Provider>
-    );
+    return <Provider value={this.getContext()}>{this.props.children}</Provider>;
   }
 }
+
+const getRefinedProducts = (
+  products: Array<Storefront.IProduct>,
+  refinements: Array<Refinement>,
+  index = 0
+): Array<Storefront.IProduct> => {
+  if (index < refinements.length && products.length > 0) {
+    const refinement = refinements[index];
+    switch (refinement.kind) {
+      case "list":
+        return getRefinedProducts(
+          applyRefinementList(products, refinement),
+          refinements,
+          index + 1
+        );
+      case "range":
+        return getRefinedProducts(
+          applyRefinementRange(products, refinement),
+          refinements,
+          index + 1
+        );
+      default:
+        return assertNever(refinement);
+    }
+  }
+  return products;
+};
+
+const applyRefinementList = (
+  products: Array<Storefront.IProduct>,
+  refinement: IRefinementList
+): Array<Storefront.IProduct> => {
+  return products;
+};
+
+const applyRefinementRange = (
+  products: Array<Storefront.IProduct>,
+  refinement: IRefinementRange
+): Array<Storefront.IProduct> => {
+  throw new Error("Not implemented");
+  return products;
+};

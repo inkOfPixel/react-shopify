@@ -6,3 +6,7 @@ export const createNamedContext = <T>(name: string, defaultValue?: T) => {
   Context.Provider.displayName = `${name}.Provider`;
   return Context;
 };
+
+export function assertNever(x: never): never {
+  throw new Error("Unexpected object: " + x);
+}
