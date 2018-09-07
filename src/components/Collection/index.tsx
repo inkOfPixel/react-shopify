@@ -1,18 +1,21 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import { Query } from "react-apollo";
+import { Query, QueryResult } from "react-apollo";
 import { createNamedContext } from "../../utils";
+import { ApolloError } from "apollo-boost";
 
-enum SortKey {
-  Manual = "MANUAL",
-  BestSelling = "BEST_SELLING",
-  Title = "TITLE",
-  Price = "PRICE",
-  Created = "CREATED",
-  CollectionDefault = "COLLECTION_DEFAULT",
-  Id = "ID",
-  Relevance = "RELEVANCE"
-}
+// enum SortKey {
+//   Manual = "MANUAL",
+//   BestSelling = "BEST_SELLING",
+//   Title = "TITLE",
+//   Price = "PRICE",
+//   Created = "CREATED",
+//   CollectionDefault = "COLLECTION_DEFAULT",
+//   Id = "ID",
+//   Relevance = "RELEVANCE"
+// }
+
+type Partial<T> = { [P in keyof T]?: T[P] };
 
 enum SortBy {
   Manual = "MANUAL",
@@ -26,39 +29,40 @@ enum SortBy {
   OldestFirst = "OLDEST_FIRST"
 }
 
-enum RefinementType {
-  List = "LIST",
-  Range = "RANGE"
-}
-
-interface IRefinement {
-  type: RefinementType;
+interface IRefinementList {
+  kind: "list";
   attribute: string;
-}
-
-interface IRefinementList extends IRefinement {
   values: string;
 }
 
-interface IRefinementRange extends IRefinement {
+interface IRefinementRange {
+  kind: "range";
+  attribute: string;
   range: string;
 }
 
+type Refinement = IRefinementList | IRefinementRange;
+
 interface ICollectionState {
   sortBy: SortBy;
-  refinements: Array<IRefinementList | IRefinementRange>;
+  refinements: Array<Refinement>;
 }
 
 interface ICollectionContext {
+  collectionState: ICollectionState;
   data: {
-    shop?: {
-      collectionByHandle: null | {
-        products: {
-          edges: Array<any>;
-        };
-      };
-    };
+    shop?: Storefront.IShop;
   };
+  loading: boolean;
+  error: ApolloError | undefined;
+  updateRefinement: (refinement: Refinement) => void;
+}
+
+interface QueryVariables {
+  handle: string;
+  limit: number;
+  sortKey: string;
+  reverse: boolean;
 }
 
 const CollectionContext = createNamedContext(
@@ -68,7 +72,7 @@ const CollectionContext = createNamedContext(
 
 interface IProps {
   children: React.ReactNode;
-  initialState?: ICollectionState;
+  initialCollectionState?: Partial<ICollectionState>;
   handle: string;
   /** By default it fetches only id and title */
   productFragment?: string;
@@ -85,7 +89,23 @@ export default class Collection extends React.Component<IProps, IState> {
         id
         title
       }
-    `
+    `,
+    initialCollectionState: {
+      sortBy: SortBy.Manual,
+      refinements: []
+    }
+  };
+
+  static sortByOptions = {
+    MANUAL: { key: "MANUAL", reverse: false },
+    BEST_SELLING: { key: "BEST_SELLING", reverse: true },
+    LEAST_SELLING: { key: "BEST_SELLING", reverse: false },
+    TITLE_ASCENDING: { key: "TITLE", reverse: true },
+    TITLE_DESCENDING: { key: "TITLE", reverse: false },
+    PRICE_ASCENDING: { key: "PRICE", reverse: false },
+    PRICE_DESCENDING: { key: "PRICE", reverse: true },
+    NEWEST_FIRST: { key: "CREATED", reverse: true },
+    OLDEST_FIRST: { key: "CREATED", reverse: false }
   };
 
   state = {
@@ -112,14 +132,38 @@ export default class Collection extends React.Component<IProps, IState> {
     `
   };
 
+  getInitialCollectionState = (): ICollectionState => {
+    const initialCollectionState = this.props.initialCollectionState as Partial<
+      ICollectionState
+    >;
+    return {
+      ...Collection.defaultProps.initialCollectionState,
+      ...initialCollectionState
+    };
+  };
+
   render() {
-    const { children, handle } = this.props;
+    const { children, handle, initialCollectionState } = this.props;
+    const { key, reverse } = Collection.sortByOptions[
+      (initialCollectionState as ICollectionState).sortBy
+    ];
     return (
-      <Query query={this.state.query} variables={{ handle, limit: 10 }}>
-        {query => (
-          <div>
-            <p>{JSON.stringify(query.data, null, "  ")}</p>
-          </div>
+      <Query
+        query={this.state.query}
+        variables={
+          { handle, limit: 10, sortKey: key, reverse } as QueryVariables
+        }
+      >
+        {({ data, loading, error, refetch }) => (
+          <CollectionImpl
+            initialCollectionState={this.getInitialCollectionState()}
+            data={data}
+            loading={loading}
+            error={error}
+            refetch={refetch}
+          >
+            {children}
+          </CollectionImpl>
         )}
       </Query>
     );
@@ -127,12 +171,33 @@ export default class Collection extends React.Component<IProps, IState> {
 }
 
 interface IImplProps {
-  initialState: ICollectionState;
+  initialCollectionState: ICollectionState;
+  data: { shop?: Storefront.IShop };
+  loading: boolean;
+  error: ApolloError | undefined;
+  refetch: QueryResult<Storefront.IQueryRoot, QueryVariables>["refetch"];
 }
 
-class CollectionImpl extends React.Component<IImplProps> {
+interface IImplState {
+  collectionState: ICollectionState;
+}
+
+class CollectionImpl extends React.Component<IImplProps, IImplState> {
+  state = {
+    collectionState: this.props.initialCollectionState
+  };
+
+  updateRefinement = (refinement: Refinement) => {};
+
   getContext = (): ICollectionContext => {
-    return {};
+    const { data, loading, error } = this.props;
+    return {
+      collectionState: this.state.collectionState,
+      data,
+      loading,
+      error,
+      updateRefinement: this.updateRefinement
+    };
   };
 
   render() {

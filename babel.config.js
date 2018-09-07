@@ -13,6 +13,7 @@ module.exports = {
         useBuiltIns: "usage"
       }
     ],
+    "@babel/preset-react",
     "@babel/preset-typescript"
   ],
   plugins: [

@@ -1,6 +1,7 @@
 import resolve from "rollup-plugin-node-resolve";
 import commonjs from "rollup-plugin-commonjs";
 import babel from "rollup-plugin-babel";
+import bundleSize from "rollup-plugin-bundle-size";
 import pkg from "./package.json";
 
 export default [
@@ -13,13 +14,17 @@ export default [
       name: "ReactShopify"
     },
     plugins: [
-      resolve(), // so Rollup can find `ms`
+      resolve({
+        extensions: [".ts", ".tsx", ".js", ".jsx", ".json"]
+      }),
       commonjs(), // so Rollup can convert `ms` to an ES module
       babel({
         extensions: [".ts", ".tsx"],
         exclude: ["node_modules/**"]
-      })
-    ]
+      }),
+      bundleSize()
+    ],
+    external: ["react", "react-apollo", "graphql-tag", "apollo-boost"]
   },
 
   // CommonJS (for Node) and ES module (for bundlers) build.
@@ -34,10 +39,15 @@ export default [
       { file: pkg.module, format: "es" }
     ],
     plugins: [
+      resolve({
+        extensions: [".ts", ".tsx", ".js", ".jsx", ".json"]
+      }),
       babel({
         extensions: [".ts", ".tsx"],
         exclude: ["node_modules/**"]
-      })
-    ]
+      }),
+      bundleSize()
+    ],
+    external: ["react", "react-apollo", "graphql-tag", "apollo-boost"]
   }
 ];
