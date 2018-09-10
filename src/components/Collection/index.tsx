@@ -3,12 +3,14 @@ import gql from "graphql-tag";
 import { Query, QueryResult } from "react-apollo";
 import { get } from "lodash";
 import { ApolloError } from "apollo-boost";
+import { uniq } from "lodash";
 import {
   Provider,
   ICollectionState,
   ICollectionContext,
   SortBy,
   Refinement,
+  IRange,
   IRefinementList,
   IRefinementRange
 } from "./Context";
@@ -36,14 +38,16 @@ interface QueryVariables {
 
 interface IProps {
   children: React.ReactNode;
-  /** You can use this to setup the initial state. All the keys are optional */
-  initialCollectionState?: Partial<ICollectionState>;
   /** Shopify collection handle */
   handle: string;
   /** Number of products to be fetched at a time */
   limit?: number;
+  /** Get refinement values of a product. You can return either a value or an array of values */
+  getValues?: (product: Storefront.IProduct, refinementId: string) => any;
   /** By default it fetches only id and title */
   productFragment?: string;
+  /** You can use this to setup the initial state. All the keys are optional */
+  initialCollectionState?: Partial<ICollectionState>;
 }
 
 interface IState {
@@ -113,7 +117,13 @@ export default class Collection extends React.Component<IProps, IState> {
   };
 
   render() {
-    const { children, handle, limit, initialCollectionState } = this.props;
+    const {
+      children,
+      handle,
+      limit,
+      initialCollectionState,
+      getValues
+    } = this.props;
     const { key, reverse } = Collection.sortByOptions[
       (initialCollectionState as ICollectionState).sortBy
     ];
@@ -129,6 +139,7 @@ export default class Collection extends React.Component<IProps, IState> {
             loading={loading}
             error={error}
             refetch={refetch}
+            getValues={getValues}
           >
             {children}
           </CollectionImpl>
@@ -144,6 +155,7 @@ interface IImplProps {
   loading: boolean;
   error: ApolloError | undefined;
   refetch: QueryResult<Storefront.IQueryRoot, QueryVariables>["refetch"];
+  getValues: (product: Storefront.IProduct, refinementId: string) => any;
 }
 
 interface IImplState {
@@ -151,6 +163,10 @@ interface IImplState {
 }
 
 class CollectionImpl extends React.Component<IImplProps, IImplState> {
+  static defaultProps = {
+    getValues: () => []
+  };
+
   state = {
     collectionState: this.props.initialCollectionState
   };
@@ -159,22 +175,51 @@ class CollectionImpl extends React.Component<IImplProps, IImplState> {
     throw new Error("Not implemented");
   };
 
-  clearRefinement = (kind: string, attribute: string) => {
+  clearRefinement = (id: string) => {
     throw new Error("Not implemented");
   };
 
-  getContext = (): ICollectionContext => {
-    const { data, loading, error } = this.props;
+  getProducts = () => {
+    const { data } = this.props;
     const productEdges = get(data.shop, "collectionByHandle.products.edges") as
       | Storefront.IProductEdge[]
       | undefined;
+    return productEdges ? productEdges.map(edge => edge.node) : [];
+  };
+
+  getRefinedProducts = () => {
+    const { getValues } = this.props;
+    const products = this.getProducts();
+    return getRefinedProducts(
+      products,
+      this.state.collectionState.refinements,
+      getValues
+    );
+  };
+
+  getAllValues = (refinement: Refinement): any[] => {
+    const products = this.getProducts();
+    const getValuesArray = makeArray(this.props.getValues);
+    return uniq(
+      products.reduce(
+        (values, product) =>
+          values.concat(getValuesArray(product, refinement.id)),
+        [] as any[]
+      )
+    );
+  };
+
+  getContext = (): ICollectionContext => {
+    const { loading, error } = this.props;
     return {
       collectionState: this.state.collectionState,
-      products: productEdges ? productEdges.map(edge => edge.node) : [],
       loading,
       error,
+      getProducts: this.getProducts,
+      getRefinedProducts: this.getRefinedProducts,
       setRefinement: this.setRefinement,
-      clearRefinement: this.clearRefinement
+      clearRefinement: this.clearRefinement,
+      getAllValues: this.getAllValues
     };
   };
 
@@ -186,41 +231,53 @@ class CollectionImpl extends React.Component<IImplProps, IImplState> {
 const getRefinedProducts = (
   products: Array<Storefront.IProduct>,
   refinements: Array<Refinement>,
-  index = 0
+  getValues: (product: Storefront.IProduct, refinementId: string) => any
 ): Array<Storefront.IProduct> => {
-  if (index < refinements.length && products.length > 0) {
-    const refinement = refinements[index];
+  const getValuesArray = makeArray(getValues);
+  return refinements.reduce((refinedProducts, refinement) => {
     switch (refinement.kind) {
       case "list":
-        return getRefinedProducts(
-          applyRefinementList(products, refinement),
-          refinements,
-          index + 1
-        );
+        return refinedProducts.filter(product => {
+          const productValues = getValuesArray(product, refinement.id);
+          const operator = refinement.operator || "or";
+          switch (operator) {
+            case "or":
+              return refinement.values.some(value =>
+                productValues.includes(value)
+              );
+            case "and":
+              return refinement.values.every(value =>
+                productValues.includes(value)
+              );
+            default:
+              return assertNever(operator);
+          }
+        });
       case "range":
-        return getRefinedProducts(
-          applyRefinementRange(products, refinement),
-          refinements,
-          index + 1
-        );
+        return refinedProducts.filter(product => {
+          const productValues = getValuesArray(product, refinement.id);
+          return productValues.some((value: any) => {
+            if (typeof value !== "number") {
+              throw new Error(
+                `getValues: Returned value is not a number. Can't test a non-number value against a range. See product "${
+                  product.id
+                }" for refinement ${refinement.id}`
+              );
+            }
+            return (
+              value >= refinement.range.min && value <= refinement.range.max
+            );
+          });
+        });
       default:
         return assertNever(refinement);
     }
-  }
-  return products;
+  }, products);
 };
 
-const applyRefinementList = (
-  products: Array<Storefront.IProduct>,
-  refinement: IRefinementList
-): Array<Storefront.IProduct> => {
-  return products;
-};
-
-const applyRefinementRange = (
-  products: Array<Storefront.IProduct>,
-  refinement: IRefinementRange
-): Array<Storefront.IProduct> => {
-  throw new Error("Not implemented");
-  return products;
+const makeArray = (fn: (...params: any[]) => any) => {
+  return (...args: any[]) => {
+    const result = fn(...args);
+    return Array.isArray(result) ? result : [result];
+  };
 };

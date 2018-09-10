@@ -25,11 +25,11 @@ export default class Products extends React.Component<IProps, {}> {
         {context => {
           if (context) {
             if (typeof children === "function") {
-              return children(context);
+              return children({ products: context.getProducts() });
             }
-            return context.products.map(product => (
-              <Product product={product} key={product.id} />
-            ));
+            return context
+              .getRefinedProducts()
+              .map(product => <Product product={product} key={product.id} />);
           }
           throw new Error(
             "<Products> is being used outside Collection context, and the generic products query is not yet implemented"

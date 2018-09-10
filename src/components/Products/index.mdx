@@ -21,7 +21,10 @@ Displays a list of products
     accessToken="078bc5caa0ddebfa89cccb4a1baa1f5c"
     url="https://graphql.myshopify.com/api/graphql"
   >
-    <Collection handle="summer-collection">
+    <Collection handle="summer-collection" refine={(product) => {
+      console.log(product.title);
+      return false;
+    }}>
       <Products></Products>
     </Collection>
   </Storefront>

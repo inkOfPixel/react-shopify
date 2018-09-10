@@ -1,22 +1,33 @@
 import { ApolloError } from "apollo-boost";
 import { createNamedContext } from "../../utils";
 
-export interface IRefinementList {
-  kind: "list";
-  attribute: string;
-  values: string;
-  operator?: "or" | "and";
+export interface ICollectionContext {
+  collectionState: ICollectionState;
+  loading: boolean;
+  error: ApolloError | undefined;
+  getProducts: () => Array<Storefront.IProduct>;
+  getRefinedProducts: () => Array<Storefront.IProduct>;
+  setRefinement: (refinement: Refinement) => void;
+  clearRefinement: (id: string) => void;
+  getAllValues: (refinement: Refinement) => any[];
 }
 
-interface IRange {
-  min: number;
-  max: number;
+export interface IRefinementList {
+  kind: "list";
+  id: string;
+  values: any[];
+  operator?: "or" | "and";
 }
 
 export interface IRefinementRange {
   kind: "range";
-  attribute: string;
+  id: string;
   range: IRange;
+}
+
+export interface IRange {
+  min: number;
+  max: number;
 }
 
 export type Refinement = IRefinementList | IRefinementRange;
@@ -36,16 +47,6 @@ export enum SortBy {
 export interface ICollectionState {
   sortBy: SortBy;
   refinements: Array<Refinement>;
-}
-
-export interface ICollectionContext {
-  collectionState: ICollectionState;
-  products: Array<Storefront.IProduct>;
-  getRefinedProducts: () => Array<Storefront.IProduct>;
-  loading: boolean;
-  error: ApolloError | undefined;
-  setRefinement: (refinement: Refinement) => void;
-  clearRefinement: (kind: string, attribute: string) => void;
 }
 
 const { Provider, Consumer } = createNamedContext(
