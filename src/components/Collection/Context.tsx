@@ -5,23 +5,38 @@ export interface ICollectionContext {
   collectionState: ICollectionState;
   loading: boolean;
   error: ApolloError | undefined;
-  getProducts: () => Array<Storefront.IProduct>;
-  getRefinedProducts: () => Array<Storefront.IProduct>;
+  products: Array<Storefront.IProduct>;
+  refinedIds: null | Array<string>;
+  facets: IFacetsByName;
   setRefinement: (refinement: Refinement) => void;
-  clearRefinement: (id: string) => void;
-  getAllValues: (refinement: Refinement) => any[];
+  clearRefinement: (name: string, kind: string) => void;
+}
+
+export interface IFacetsByName {
+  [name: string]: Array<ILabel>;
+}
+
+interface ILabel {
+  value: string;
+  count: number;
+  isRefined: boolean;
+}
+
+export interface ICollectionState {
+  sortBy: SortBy;
+  refinements: Array<Refinement>;
 }
 
 export interface IRefinementList {
   kind: "list";
-  id: string;
-  values: any[];
+  name: string;
+  labels: string[];
   operator?: "or" | "and";
 }
 
 export interface IRefinementRange {
   kind: "range";
-  id: string;
+  name: string;
   range: IRange;
 }
 
@@ -30,7 +45,7 @@ export interface IRange {
   max: number;
 }
 
-export type Refinement = IRefinementList | IRefinementRange;
+export type Refinement = IRefinementList;
 
 export enum SortBy {
   Manual = "MANUAL",
@@ -42,11 +57,6 @@ export enum SortBy {
   PriceDescending = "PRICE_DESCENDING",
   NewestFirst = "NEWEST_FIRST",
   OldestFirst = "OLDEST_FIRST"
-}
-
-export interface ICollectionState {
-  sortBy: SortBy;
-  refinements: Array<Refinement>;
 }
 
 const { Provider, Consumer } = createNamedContext(

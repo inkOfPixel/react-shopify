@@ -3,13 +3,14 @@ import gql from "graphql-tag";
 import { Query, QueryResult } from "react-apollo";
 import { get } from "lodash";
 import { ApolloError } from "apollo-boost";
-import { uniq } from "lodash";
+import { uniq, union, intersection, map, mapValues, pickBy } from "lodash";
 import {
   Provider,
   ICollectionState,
   ICollectionContext,
   SortBy,
   Refinement,
+  IFacetsByName,
   IRange,
   IRefinementList,
   IRefinementRange
@@ -36,6 +37,11 @@ interface QueryVariables {
   reverse: boolean;
 }
 
+interface IFacet {
+  name: string;
+  labels: Array<string> | string;
+}
+
 interface IProps {
   children: React.ReactNode;
   /** Shopify collection handle */
@@ -43,7 +49,7 @@ interface IProps {
   /** Number of products to be fetched at a time */
   limit?: number;
   /** Get refinement values of a product. You can return either a value or an array of values */
-  getValues?: (product: Storefront.IProduct, refinementId: string) => any;
+  getFacets?: (product: Storefront.IProduct) => Array<IFacet>;
   /** By default it fetches only id and title */
   productFragment?: string;
   /** You can use this to setup the initial state. All the keys are optional */
@@ -155,11 +161,19 @@ interface IImplProps {
   loading: boolean;
   error: ApolloError | undefined;
   refetch: QueryResult<Storefront.IQueryRoot, QueryVariables>["refetch"];
-  getValues: (product: Storefront.IProduct, refinementId: string) => any;
+  getFacets?: (product: Storefront.IProduct) => Array<IFacet>;
 }
 
 interface IImplState {
   collectionState: ICollectionState;
+}
+
+interface IFacetsIndex {
+  [name: string]: IIdsByLabel;
+}
+
+interface IIdsByLabel {
+  [label: string]: Array<string>;
 }
 
 class CollectionImpl extends React.Component<IImplProps, IImplState> {
@@ -187,39 +201,32 @@ class CollectionImpl extends React.Component<IImplProps, IImplState> {
     return productEdges ? productEdges.map(edge => edge.node) : [];
   };
 
-  getRefinedProducts = () => {
-    const { getValues } = this.props;
-    const products = this.getProducts();
-    return getRefinedProducts(
-      products,
-      this.state.collectionState.refinements,
-      getValues
-    );
-  };
-
-  getAllValues = (refinement: Refinement): any[] => {
-    const products = this.getProducts();
-    const getValuesArray = makeArray(this.props.getValues);
-    return uniq(
-      products.reduce(
-        (values, product) =>
-          values.concat(getValuesArray(product, refinement.id)),
-        [] as any[]
-      )
-    );
-  };
-
   getContext = (): ICollectionContext => {
-    const { loading, error } = this.props;
+    const { loading, error, getFacets } = this.props;
+    const { collectionState } = this.state;
+    const products = this.getProducts();
+    const index = buildIndex(products, getFacets);
+    const refinedIdsByFacet = getRefinedIdsByFacet(
+      index,
+      collectionState.refinements
+    );
+    const refinedIds = hasRefinements(collectionState.refinements)
+      ? intersection(...map(refinedIdsByFacet))
+      : null;
+    const facets = getFacetsByName(
+      index,
+      refinedIdsByFacet,
+      collectionState.refinements
+    );
     return {
-      collectionState: this.state.collectionState,
+      collectionState,
       loading,
       error,
-      getProducts: this.getProducts,
-      getRefinedProducts: this.getRefinedProducts,
+      products,
+      refinedIds,
+      facets,
       setRefinement: this.setRefinement,
-      clearRefinement: this.clearRefinement,
-      getAllValues: this.getAllValues
+      clearRefinement: this.clearRefinement
     };
   };
 
@@ -228,51 +235,136 @@ class CollectionImpl extends React.Component<IImplProps, IImplState> {
   }
 }
 
-const getRefinedProducts = (
-  products: Array<Storefront.IProduct>,
-  refinements: Array<Refinement>,
-  getValues: (product: Storefront.IProduct, refinementId: string) => any
-): Array<Storefront.IProduct> => {
-  const getValuesArray = makeArray(getValues);
-  return refinements.reduce((refinedProducts, refinement) => {
+const hasRefinements = (refinements: Refinement[]): boolean => {
+  return refinements.some(refinement => {
     switch (refinement.kind) {
       case "list":
-        return refinedProducts.filter(product => {
-          const productValues = getValuesArray(product, refinement.id);
-          const operator = refinement.operator || "or";
-          switch (operator) {
-            case "or":
-              return refinement.values.some(value =>
-                productValues.includes(value)
-              );
-            case "and":
-              return refinement.values.every(value =>
-                productValues.includes(value)
-              );
-            default:
-              return assertNever(operator);
-          }
-        });
-      case "range":
-        return refinedProducts.filter(product => {
-          const productValues = getValuesArray(product, refinement.id);
-          return productValues.some((value: any) => {
-            if (typeof value !== "number") {
-              throw new Error(
-                `getValues: Returned value is not a number. Can't test a non-number value against a range. See product "${
-                  product.id
-                }" for refinement ${refinement.id}`
-              );
-            }
-            return (
-              value >= refinement.range.min && value <= refinement.range.max
-            );
-          });
-        });
+        return refinement.labels.length > 0;
       default:
         return assertNever(refinement);
     }
-  }, products);
+  });
+};
+
+const buildIndex = (
+  products: Array<Storefront.IProduct>,
+  getFacets?: (product: Storefront.IProduct) => Array<IFacet>
+): IFacetsIndex => {
+  if (typeof getFacets !== "function") {
+    return {};
+  }
+  return products.reduce(
+    (index, product) => {
+      const facets = getFacets(product);
+      facets.forEach(facet => {
+        if (Array.isArray(facet.labels)) {
+          facet.labels.forEach(label => {
+            index[facet.name] = index[facet.name] || {};
+            index[facet.name][label] = index[facet.name][label] || [];
+            index[facet.name][label].push(product.id);
+          });
+        }
+      });
+      return index;
+    },
+    {} as IFacetsIndex
+  );
+};
+
+interface IRefinedIdsByFacet {
+  [name: string]: Array<string>;
+}
+
+const getRefinedIdsByFacet = (
+  index: IFacetsIndex,
+  refinements: Array<Refinement>
+): IRefinedIdsByFacet => {
+  return refinements.reduce(
+    (idsByFacet, refinement) => {
+      switch (refinement.kind) {
+        case "list": {
+          const operator = refinement.operator || "or";
+          if (refinement.labels.length === 0) {
+            return idsByFacet;
+          }
+          switch (operator) {
+            case "or":
+              idsByFacet[refinement.name] = union(
+                ...refinement.labels.map(label => index[refinement.name][label])
+              );
+              break;
+            case "and":
+              idsByFacet[refinement.name] = intersection(
+                ...refinement.labels.map(label => index[refinement.name][label])
+              );
+              break;
+            default:
+              return assertNever(operator);
+          }
+          break;
+        }
+        default:
+          return assertNever(refinement);
+      }
+      return idsByFacet;
+    },
+    {} as IRefinedIdsByFacet
+  );
+};
+
+const getFacetsByName = (
+  index: IFacetsIndex,
+  refinedIdsByFacet: IRefinedIdsByFacet,
+  refinements: Array<Refinement>
+): IFacetsByName => {
+  const refinementByName = refinements.reduce(
+    (byName, refinement) => {
+      byName[refinement.name] = refinement;
+      return byName;
+    },
+    {} as { [name: string]: Refinement }
+  );
+  return mapValues(index, (idsByLabel: IIdsByLabel, name: string) => {
+    const facetRefinement = refinementByName[name];
+    const facetRefinedIds = refinedIdsByFacet[name];
+    const otherFacetsIds = intersection(
+      ...map(
+        pickBy(refinedIdsByFacet, (ids, _name) => {
+          return _name !== name;
+        })
+      )
+    );
+    if (facetRefinement && facetRefinement.kind !== "list") {
+      throw new Error(`Refinement on <${name}> is not a list refinement`);
+    }
+    const operator =
+      facetRefinement && facetRefinement.operator
+        ? facetRefinement.operator
+        : "or";
+    return map(idsByLabel, (ids, label) => {
+      let refinedIdsWithLabel;
+      if (facetRefinedIds && facetRefinedIds.length > 0) {
+        switch (operator) {
+          case "or":
+            refinedIdsWithLabel = union(ids, facetRefinedIds);
+            break;
+          case "and":
+            refinedIdsWithLabel = intersection(ids, facetRefinedIds);
+            break;
+          default:
+            return assertNever(operator);
+        }
+      } else {
+        refinedIdsWithLabel = ids;
+      }
+      refinedIdsWithLabel = intersection(refinedIdsWithLabel, otherFacetsIds);
+      const isRefined =
+        facetRefinement && facetRefinement.labels.includes(label)
+          ? true
+          : false;
+      return { value: label, count: refinedIdsWithLabel.length, isRefined };
+    });
+  });
 };
 
 const makeArray = (fn: (...params: any[]) => any) => {
