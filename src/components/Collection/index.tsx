@@ -1,9 +1,8 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import { Query, QueryResult } from "react-apollo";
-import { get } from "lodash";
 import { ApolloError } from "apollo-boost";
-import { union, intersection, map, mapValues, pickBy } from "lodash";
+import { get, union, intersection, map, mapValues, pickBy } from "lodash-es";
 import { assertNever } from "../../utils";
 import { createNamedContext } from "../../utils";
 
@@ -83,11 +82,6 @@ interface QueryVariables {
   reverse: boolean;
 }
 
-interface IFacet {
-  name: string;
-  labels: Array<string> | string;
-}
-
 interface IProps {
   children: React.ReactNode;
   /** Shopify collection handle */
@@ -95,7 +89,7 @@ interface IProps {
   /** Number of products to be fetched at a time */
   limit?: number;
   /** Get refinement values of a product. You can return either a value or an array of values */
-  getFacets?: (product: Storefront.IProduct) => Array<IFacet>;
+  getFacets?: ReactShopify.FacetExtractor;
   /** By default it fetches only id and title */
   productFragment?: string;
   /** You can use this to setup the initial state. All the keys are optional */
@@ -227,7 +221,7 @@ interface IImplProps {
   loading: boolean;
   error: ApolloError | undefined;
   refetch: QueryResult<Storefront.IQueryRoot, QueryVariables>["refetch"];
-  getFacets?: (product: Storefront.IProduct) => Array<IFacet>;
+  getFacets?: (product: Storefront.IProduct) => Array<ReactShopify.IFacet>;
 }
 
 interface IImplState {
@@ -332,7 +326,7 @@ const hasRefinements = (refinements: Refinement[]): boolean => {
 
 const buildIndex = (
   products: Array<Storefront.IProduct>,
-  getFacets?: (product: Storefront.IProduct) => Array<IFacet>
+  getFacets?: (product: Storefront.IProduct) => Array<ReactShopify.IFacet>
 ): IFacetsIndex => {
   if (typeof getFacets !== "function") {
     return {};

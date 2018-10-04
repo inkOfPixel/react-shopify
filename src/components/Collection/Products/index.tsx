@@ -1,5 +1,5 @@
 import * as React from "react";
-import { keyBy } from "lodash";
+import { keyBy } from "lodash-es";
 import Collection from "../";
 
 interface IProductsContext {

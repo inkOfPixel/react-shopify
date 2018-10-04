@@ -4,62 +4,60 @@ route: /
 ---
 
 import { Playground, PropsTable } from "docz";
+import gql from "graphql-tag";
 import Storefront from "./components/Storefront";
 import Collection from "./components/Collection";
 import Products from "./components/Collection/Products";
 import RefinementList from "./components/Collection/RefinementList";
+import { combine, productFacet } from "./utils";
 
 # React Shopify
 
-React Shopify is an opinionated library of React components built upon the Shopify Storefront API. The purpose of the library is to simplify development of Shopify stores by abstracting away business logic.
+React Shopify is a component library that aims to make dead simple to create custom shopify stores.
 
 ## Install
 
-> NOTE: require also peer deps ⚠️
-
 ```bash
-yarn add -E react-shopify
+yarn add -E react-shopify graphql graphql-tag apollo-boost react-apollo
 ```
 
 ```bash
-npm i -E react-shopify
+npm i -E react-shopify graphql graphql-tag apollo-boost react-apollo
 ```
 
 React Shopify requires React 16.3+ as it uses new React Context API.
 
-## Basic usage
+## Usage
 
 <Playground>
   <Storefront
     accessToken="078bc5caa0ddebfa89cccb4a1baa1f5c"
     url="https://graphql.myshopify.com/api/graphql"
   >
-    <Collection handle="summer-collection" limit={3}>
-      <Products />
-    </Collection>
-  </Storefront>
-</Playground>
-
-## Examples
-
-### With refinements
-
-<Playground>
-  <Storefront
-    accessToken="078bc5caa0ddebfa89cccb4a1baa1f5c"
-    url="https://graphql.myshopify.com/api/graphql"
-  >
-    <Collection handle="summer-collection" limit={3}
-      getFacets={product => {
-        const facets = [];
-        facets.push({
-          name: "tags",
-          labels: product.tags
-        });
-        return facets;
-      }}
+    <Collection 
+      handle="summer-collection"
+      limit={20}
+      productFragment={gql`
+        fragment CollectionProduct on Product {
+          id
+          title
+          tags
+          vendor
+        }
+      `}
+      getFacets={combine([productFacet("tags"), productFacet("vendor")])}
     >
-      <RefinementList name="tags" />
+      <div style={{ display: "flex" }}>
+        <div>
+          <h2>Tags</h2>
+          <RefinementList name="tags" />
+        </div>
+        <div>
+          <h2>Vendor</h2>
+          <RefinementList name="vendor" />
+        </div>
+        
+      </div>
       <Products />
     </Collection>
   </Storefront>
