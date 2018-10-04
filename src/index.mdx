@@ -6,7 +6,8 @@ route: /
 import { Playground, PropsTable } from "docz";
 import Storefront from "./components/Storefront";
 import Collection from "./components/Collection";
-import Products from "./components/Products";
+import Products from "./components/Collection/Products";
+import RefinementList from "./components/Collection/RefinementList";
 
 # React Shopify
 
@@ -34,8 +35,32 @@ React Shopify requires React 16.3+ as it uses new React Context API.
     url="https://graphql.myshopify.com/api/graphql"
   >
     <Collection handle="summer-collection" limit={3}>
-      <Products></Products>
+      <Products />
     </Collection>
   </Storefront>
 </Playground>
 
+## Examples
+
+### With refinements
+
+<Playground>
+  <Storefront
+    accessToken="078bc5caa0ddebfa89cccb4a1baa1f5c"
+    url="https://graphql.myshopify.com/api/graphql"
+  >
+    <Collection handle="summer-collection" limit={3}
+      getFacets={product => {
+        const facets = [];
+        facets.push({
+          name: "tags",
+          labels: product.tags
+        });
+        return facets;
+      }}
+    >
+      <RefinementList name="tags" />
+      <Products />
+    </Collection>
+  </Storefront>
+</Playground>

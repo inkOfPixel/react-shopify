@@ -3,30 +3,76 @@ import gql from "graphql-tag";
 import { Query, QueryResult } from "react-apollo";
 import { get } from "lodash";
 import { ApolloError } from "apollo-boost";
-import { uniq, union, intersection, map, mapValues, pickBy } from "lodash";
-import {
-  Provider,
-  ICollectionState,
-  ICollectionContext,
-  SortBy,
-  Refinement,
-  IFacetsByName,
-  IRange,
-  IRefinementList,
-  IRefinementRange
-} from "./Context";
+import { union, intersection, map, mapValues, pickBy } from "lodash";
 import { assertNever } from "../../utils";
+import { createNamedContext } from "../../utils";
 
-// enum SortKey {
-//   Manual = "MANUAL",
-//   BestSelling = "BEST_SELLING",
-//   Title = "TITLE",
-//   Price = "PRICE",
-//   Created = "CREATED",
-//   CollectionDefault = "COLLECTION_DEFAULT",
-//   Id = "ID",
-//   Relevance = "RELEVANCE"
-// }
+export interface ICollectionContext {
+  collectionState: ICollectionState;
+  loading: boolean;
+  error: ApolloError | undefined;
+  products: Array<Storefront.IProduct>;
+  refinedIds: null | Array<string>;
+  facets: IFacetsByName;
+  setRefinement: (refinement: Refinement) => void;
+  clearRefinement: (name: string) => void;
+}
+
+export interface IFacetsByName {
+  [name: string]: Array<ILabel>;
+}
+
+export interface ILabel {
+  value: string;
+  count: number;
+  isRefined: boolean;
+}
+
+export interface ICollectionState {
+  sortBy: SortBy;
+  refinements: IRefinementMap;
+}
+
+interface IRefinementMap {
+  [name: string]: Refinement;
+}
+
+export interface IRefinementList {
+  kind: "list";
+  name: string;
+  labels: string[];
+  operator?: "or" | "and";
+}
+
+export interface IRefinementRange {
+  kind: "range";
+  name: string;
+  range: IRange;
+}
+
+export interface IRange {
+  min: number;
+  max: number;
+}
+
+export type Refinement = IRefinementList;
+
+export enum SortBy {
+  Manual = "MANUAL",
+  BestSelling = "BEST_SELLING",
+  LeastSelling = "LEAST_SELLING",
+  TitleAscending = "TITLE_ASCENDING",
+  TitleDescending = "TITLE_DESCENDING",
+  PriceAscending = "PRICE_ASCENDING",
+  PriceDescending = "PRICE_DESCENDING",
+  NewestFirst = "NEWEST_FIRST",
+  OldestFirst = "OLDEST_FIRST"
+}
+
+const CollectionContext = createNamedContext(
+  "Collection",
+  {} as ICollectionContext
+);
 
 type Partial<T> = { [P in keyof T]?: T[P] };
 
@@ -60,17 +106,37 @@ interface IState {
   query: string;
 }
 
+const CollectionConsumer: React.SFC<{
+  children: (context: ICollectionContext) => React.ReactNode;
+}> = props => {
+  return (
+    <CollectionContext.Consumer>
+      {context => {
+        if (!context) {
+          throw new Error(
+            "Collection consumer must be rendered within the Collection component"
+          );
+        }
+        return props.children(context);
+      }}
+    </CollectionContext.Consumer>
+  );
+};
+
 export default class Collection extends React.Component<IProps, IState> {
+  static Consumer = CollectionConsumer;
+
   static defaultProps = {
     productFragment: gql`
       fragment CollectionProduct on Product {
         id
         title
+        tags
       }
     `,
     initialCollectionState: {
       sortBy: SortBy.Manual,
-      refinements: []
+      refinements: {}
     },
     limit: 20
   };
@@ -128,7 +194,7 @@ export default class Collection extends React.Component<IProps, IState> {
       handle,
       limit,
       initialCollectionState,
-      getValues
+      getFacets
     } = this.props;
     const { key, reverse } = Collection.sortByOptions[
       (initialCollectionState as ICollectionState).sortBy
@@ -145,7 +211,7 @@ export default class Collection extends React.Component<IProps, IState> {
             loading={loading}
             error={error}
             refetch={refetch}
-            getValues={getValues}
+            getFacets={getFacets}
           >
             {children}
           </CollectionImpl>
@@ -186,11 +252,29 @@ class CollectionImpl extends React.Component<IImplProps, IImplState> {
   };
 
   setRefinement = (refinement: Refinement) => {
-    throw new Error("Not implemented");
+    this.setState(currentState => ({
+      collectionState: {
+        ...currentState.collectionState,
+        refinements: {
+          ...currentState.collectionState.refinements,
+          [refinement.name]: refinement
+        }
+      }
+    }));
   };
 
-  clearRefinement = (id: string) => {
-    throw new Error("Not implemented");
+  clearRefinement = (name: string) => {
+    this.setState(currentState => ({
+      collectionState: {
+        ...currentState.collectionState,
+        refinements: pickBy(
+          currentState.collectionState.refinements,
+          (refinement, _name) => {
+            return _name !== name;
+          }
+        )
+      }
+    }));
   };
 
   getProducts = () => {
@@ -204,20 +288,16 @@ class CollectionImpl extends React.Component<IImplProps, IImplState> {
   getContext = (): ICollectionContext => {
     const { loading, error, getFacets } = this.props;
     const { collectionState } = this.state;
+    const refinements = map(collectionState.refinements);
     const products = this.getProducts();
     const index = buildIndex(products, getFacets);
-    const refinedIdsByFacet = getRefinedIdsByFacet(
-      index,
-      collectionState.refinements
-    );
-    const refinedIds = hasRefinements(collectionState.refinements)
-      ? intersection(...map(refinedIdsByFacet))
-      : null;
-    const facets = getFacetsByName(
-      index,
-      refinedIdsByFacet,
-      collectionState.refinements
-    );
+    let refinedIdsByFacet = {} as IRefinedIdsByFacet;
+    let refinedIds = null;
+    if (hasRefinements(refinements)) {
+      refinedIdsByFacet = getRefinedIdsByFacet(index, refinements);
+      refinedIds = intersection(...map(refinedIdsByFacet));
+    }
+    const facets = getFacetsByName(index, refinedIdsByFacet, refinements);
     return {
       collectionState,
       loading,
@@ -231,7 +311,11 @@ class CollectionImpl extends React.Component<IImplProps, IImplState> {
   };
 
   render() {
-    return <Provider value={this.getContext()}>{this.props.children}</Provider>;
+    return (
+      <CollectionContext.Provider value={this.getContext()}>
+        {this.props.children}
+      </CollectionContext.Provider>
+    );
   }
 }
 
@@ -289,6 +373,7 @@ const getRefinedIdsByFacet = (
           }
           switch (operator) {
             case "or":
+              console.log("index and ref", index, refinement);
               idsByFacet[refinement.name] = union(
                 ...refinement.labels.map(label => index[refinement.name][label])
               );
@@ -327,13 +412,13 @@ const getFacetsByName = (
   return mapValues(index, (idsByLabel: IIdsByLabel, name: string) => {
     const facetRefinement = refinementByName[name];
     const facetRefinedIds = refinedIdsByFacet[name];
-    const otherFacetsIds = intersection(
-      ...map(
-        pickBy(refinedIdsByFacet, (ids, _name) => {
-          return _name !== name;
-        })
-      )
-    );
+    const otherIdsByFacet = pickBy(refinedIdsByFacet, (ids, _name) => {
+      return _name !== name;
+    });
+    const otherFacetsIds =
+      Object.keys(otherIdsByFacet).length > 0
+        ? intersection(...map(otherIdsByFacet))
+        : null;
     if (facetRefinement && facetRefinement.kind !== "list") {
       throw new Error(`Refinement on <${name}> is not a list refinement`);
     }
@@ -346,7 +431,7 @@ const getFacetsByName = (
       if (facetRefinedIds && facetRefinedIds.length > 0) {
         switch (operator) {
           case "or":
-            refinedIdsWithLabel = union(ids, facetRefinedIds);
+            refinedIdsWithLabel = ids;
             break;
           case "and":
             refinedIdsWithLabel = intersection(ids, facetRefinedIds);
@@ -357,7 +442,9 @@ const getFacetsByName = (
       } else {
         refinedIdsWithLabel = ids;
       }
-      refinedIdsWithLabel = intersection(refinedIdsWithLabel, otherFacetsIds);
+      if (otherFacetsIds) {
+        refinedIdsWithLabel = intersection(refinedIdsWithLabel, otherFacetsIds);
+      }
       const isRefined =
         facetRefinement && facetRefinement.labels.includes(label)
           ? true
@@ -365,11 +452,4 @@ const getFacetsByName = (
       return { value: label, count: refinedIdsWithLabel.length, isRefined };
     });
   });
-};
-
-const makeArray = (fn: (...params: any[]) => any) => {
-  return (...args: any[]) => {
-    const result = fn(...args);
-    return Array.isArray(result) ? result : [result];
-  };
 };
