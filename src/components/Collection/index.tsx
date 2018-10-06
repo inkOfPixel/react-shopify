@@ -3,75 +3,20 @@ import gql from "graphql-tag";
 import { Query, QueryResult } from "react-apollo";
 import { ApolloError } from "apollo-boost";
 import { get, union, intersection, map, mapValues, pickBy } from "lodash-es";
+import {
+  Provider,
+  Consumer,
+  ICollectionContext,
+  ICollectionState,
+  SortByOption,
+  Refinement,
+  IFacetsByName,
+  sortByOptions
+} from "./Context";
+import RefinementList from "./RefinementList";
+import Products from "./Products";
+import SortBy from "./SortBy";
 import { assertNever } from "../../utils";
-import { createNamedContext } from "../../utils";
-
-export interface ICollectionContext {
-  collectionState: ICollectionState;
-  loading: boolean;
-  error: ApolloError | undefined;
-  products: Array<Storefront.IProduct>;
-  refinedIds: null | Array<string>;
-  facets: IFacetsByName;
-  setRefinement: (refinement: Refinement) => void;
-  clearRefinement: (name: string) => void;
-}
-
-export interface IFacetsByName {
-  [name: string]: Array<ILabel>;
-}
-
-export interface ILabel {
-  value: string;
-  count: number;
-  isRefined: boolean;
-}
-
-export interface ICollectionState {
-  sortBy: SortBy;
-  refinements: IRefinementMap;
-}
-
-interface IRefinementMap {
-  [name: string]: Refinement;
-}
-
-export interface IRefinementList {
-  kind: "list";
-  name: string;
-  labels: string[];
-  operator?: "or" | "and";
-}
-
-export interface IRefinementRange {
-  kind: "range";
-  name: string;
-  range: IRange;
-}
-
-export interface IRange {
-  min: number;
-  max: number;
-}
-
-export type Refinement = IRefinementList;
-
-export enum SortBy {
-  Manual = "MANUAL",
-  BestSelling = "BEST_SELLING",
-  LeastSelling = "LEAST_SELLING",
-  TitleAscending = "TITLE_ASCENDING",
-  TitleDescending = "TITLE_DESCENDING",
-  PriceAscending = "PRICE_ASCENDING",
-  PriceDescending = "PRICE_DESCENDING",
-  NewestFirst = "NEWEST_FIRST",
-  OldestFirst = "OLDEST_FIRST"
-}
-
-const CollectionContext = createNamedContext(
-  "Collection",
-  {} as ICollectionContext
-);
 
 type Partial<T> = { [P in keyof T]?: T[P] };
 
@@ -96,29 +41,38 @@ interface IProps {
   initialCollectionState?: Partial<ICollectionState>;
 }
 
-interface IState {
-  query: string;
-}
+interface IState {}
 
-const CollectionConsumer: React.SFC<{
-  children: (context: ICollectionContext) => React.ReactNode;
-}> = props => {
-  return (
-    <CollectionContext.Consumer>
-      {context => {
-        if (!context) {
-          throw new Error(
-            "Collection consumer must be rendered within the Collection component"
-          );
+const getQuery = ({ productFragment }: { productFragment: any }) => gql`
+  query CollectionQuery(
+    $handle: String!
+    $sortKey: ProductCollectionSortKeys
+    $reverse: Boolean
+    $limit: Int!
+  ) {
+    shop {
+      collectionByHandle(handle: $handle) {
+        products(first: $limit, sortKey: $sortKey, reverse: $reverse) {
+          edges {
+            node {
+              id
+              ...CollectionProduct
+            }
+          }
         }
-        return props.children(context);
-      }}
-    </CollectionContext.Consumer>
-  );
-};
+      }
+    }
+  }
+  ${productFragment}
+`;
 
 export default class Collection extends React.Component<IProps, IState> {
-  static Consumer = CollectionConsumer;
+  static Consumer = Consumer;
+  static RefinementList = RefinementList;
+  static Products = Products;
+  static SortBy = SortBy;
+
+  static sortByOptions = sortByOptions;
 
   static defaultProps = {
     productFragment: gql`
@@ -129,47 +83,10 @@ export default class Collection extends React.Component<IProps, IState> {
       }
     `,
     initialCollectionState: {
-      sortBy: SortBy.Manual,
+      sortBy: SortByOption.Manual,
       refinements: {}
     },
     limit: 20
-  };
-
-  static sortByOptions = {
-    MANUAL: { key: "MANUAL", reverse: false },
-    BEST_SELLING: { key: "BEST_SELLING", reverse: true },
-    LEAST_SELLING: { key: "BEST_SELLING", reverse: false },
-    TITLE_ASCENDING: { key: "TITLE", reverse: true },
-    TITLE_DESCENDING: { key: "TITLE", reverse: false },
-    PRICE_ASCENDING: { key: "PRICE", reverse: false },
-    PRICE_DESCENDING: { key: "PRICE", reverse: true },
-    NEWEST_FIRST: { key: "CREATED", reverse: true },
-    OLDEST_FIRST: { key: "CREATED", reverse: false }
-  };
-
-  state = {
-    query: gql`
-      query CollectionQuery(
-        $handle: String!
-        $sortKey: ProductCollectionSortKeys
-        $reverse: Boolean
-        $limit: Int!
-      ) {
-        shop {
-          collectionByHandle(handle: $handle) {
-            products(first: $limit, sortKey: $sortKey, reverse: $reverse) {
-              edges {
-                node {
-                  id
-                  ...CollectionProduct
-                }
-              }
-            }
-          }
-        }
-      }
-      ${this.props.productFragment}
-    `
   };
 
   getInitialCollectionState = (): ICollectionState => {
@@ -188,23 +105,26 @@ export default class Collection extends React.Component<IProps, IState> {
       handle,
       limit,
       initialCollectionState,
-      getFacets
+      getFacets,
+      productFragment
     } = this.props;
     const { key, reverse } = Collection.sortByOptions[
       (initialCollectionState as ICollectionState).sortBy
     ];
     return (
       <Query
-        query={this.state.query}
+        query={getQuery({ productFragment })}
         variables={{ handle, limit, sortKey: key, reverse } as QueryVariables}
       >
         {({ data, loading, error, refetch }) => (
           <CollectionImpl
+            handle={handle}
             initialCollectionState={this.getInitialCollectionState()}
             data={data}
             loading={loading}
             error={error}
             refetch={refetch}
+            limit={limit}
             getFacets={getFacets}
           >
             {children}
@@ -216,10 +136,12 @@ export default class Collection extends React.Component<IProps, IState> {
 }
 
 interface IImplProps {
+  handle: string;
   initialCollectionState: ICollectionState;
   data: { shop?: Storefront.IShop };
   loading: boolean;
   error: ApolloError | undefined;
+  limit?: number;
   refetch: QueryResult<Storefront.IQueryRoot, QueryVariables>["refetch"];
   getFacets?: (product: Storefront.IProduct) => Array<ReactShopify.IFacet>;
 }
@@ -271,6 +193,18 @@ class CollectionImpl extends React.Component<IImplProps, IImplState> {
     }));
   };
 
+  changeSortBy = (sortBy: SortByOption) => {
+    const { handle, limit } = this.props;
+    const { key: sortKey, reverse } = Collection.sortByOptions[sortBy];
+    this.props.refetch({ handle, limit, sortKey, reverse });
+    this.setState(currentState => ({
+      collectionState: {
+        ...currentState.collectionState,
+        sortBy
+      }
+    }));
+  };
+
   getProducts = () => {
     const { data } = this.props;
     const productEdges = get(data.shop, "collectionByHandle.products.edges") as
@@ -300,16 +234,13 @@ class CollectionImpl extends React.Component<IImplProps, IImplState> {
       refinedIds,
       facets,
       setRefinement: this.setRefinement,
-      clearRefinement: this.clearRefinement
+      clearRefinement: this.clearRefinement,
+      changeSortBy: this.changeSortBy
     };
   };
 
   render() {
-    return (
-      <CollectionContext.Provider value={this.getContext()}>
-        {this.props.children}
-      </CollectionContext.Provider>
-    );
+    return <Provider value={this.getContext()}>{this.props.children}</Provider>;
   }
 }
 

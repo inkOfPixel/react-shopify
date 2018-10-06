@@ -1,5 +1,5 @@
 import * as React from "react";
-import Collection, { ILabel, IRefinementList } from "../";
+import { Consumer, ILabel, IRefinementList } from "./Context";
 
 interface IRefinementListContext {
   loading: boolean;
@@ -18,7 +18,7 @@ interface IProps {
 
 const RefinementListConsumer = (props: IProps) => {
   return (
-    <Collection.Consumer>
+    <Consumer>
       {context => {
         if (typeof props.children !== "function") {
           return null;
@@ -65,13 +65,13 @@ const RefinementListConsumer = (props: IProps) => {
           }
         });
       }}
-    </Collection.Consumer>
+    </Consumer>
   );
 };
 
 export default class RefinementList extends React.Component<IProps, {}> {
   render() {
-    const { children, operator, name } = this.props;
+    const { children, operator, name, ...otherProps } = this.props;
     return (
       <RefinementListConsumer name={name} operator={operator}>
         {context => {
@@ -79,7 +79,7 @@ export default class RefinementList extends React.Component<IProps, {}> {
             return children(context);
           }
           return (
-            <div>
+            <div {...otherProps}>
               {context.labels.map(label => (
                 <div key={label.value}>
                   <input

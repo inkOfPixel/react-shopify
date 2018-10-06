@@ -4,8 +4,7 @@ menu: Components
 ---
 
 import { Playground, PropsTable } from "docz";
-import Collection from "./";
-import Storefront from "../Storefront";
+import {}
 
 # Collection
 

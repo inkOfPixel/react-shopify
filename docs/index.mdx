@@ -5,11 +5,7 @@ route: /
 
 import { Playground, PropsTable } from "docz";
 import gql from "graphql-tag";
-import Storefront from "./components/Storefront";
-import Collection from "./components/Collection";
-import Products from "./components/Collection/Products";
-import RefinementList from "./components/Collection/RefinementList";
-import { combine, productFacet } from "./utils";
+import {Storefront, Collection, combine, productFacet} from "react-shopify";
 
 # React Shopify
 
@@ -50,15 +46,18 @@ React Shopify requires React 16.3+ as it uses new React Context API.
       <div style={{ display: "flex" }}>
         <div>
           <h2>Tags</h2>
-          <RefinementList name="tags" />
+          <Collection.RefinementList name="tags" />
         </div>
         <div>
           <h2>Vendor</h2>
-          <RefinementList name="vendor" />
+          <Collection.RefinementList name="vendor" />
         </div>
-        
+        <div>
+          <h2>Sorting</h2>
+          <Collection.SortBy />
+        </div>
       </div>
-      <Products />
+      <Collection.Products />
     </Collection>
   </Storefront>
 </Playground>

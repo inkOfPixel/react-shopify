@@ -1,6 +1,6 @@
 import * as React from "react";
 import { keyBy } from "lodash-es";
-import Collection from "../";
+import { Consumer } from "./Context";
 
 interface IProductsContext {
   products: Storefront.IProduct[];
@@ -19,30 +19,41 @@ interface IProps {
   productComponent?: React.ComponentType<IProductProps>;
 }
 
+const ProductsConsumer = (props: IProps) => {
+  return (
+    <Consumer>
+      {context => {
+        if (typeof props.children !== "function") {
+          return null;
+        }
+        const { products, refinedIds, loading } = context;
+        let refinedProducts: Storefront.IProduct[];
+        if (refinedIds) {
+          const productsById = keyBy(products, "id");
+          refinedProducts = refinedIds.map(id => productsById[id]);
+        } else {
+          refinedProducts = products;
+        }
+        return props.children({ loading, products: refinedProducts });
+      }}
+    </Consumer>
+  );
+};
+
 export default class Products extends React.Component<IProps, {}> {
   render() {
     const { children, productComponent: Product = DemoProduct } = this.props;
     return (
-      <Collection.Consumer>
+      <ProductsConsumer>
         {context => {
-          const { products, refinedIds, loading } = context;
-          let refinedProducts;
-          if (refinedIds) {
-            const productsById = keyBy(products, "id");
-            refinedProducts = refinedIds.map(id => productsById[id]);
-          } else {
-            refinedProducts = products;
-          }
-
           if (typeof children === "function") {
-            return children({ products: refinedProducts, loading });
+            return children(context);
           }
-          console.log(context);
-          return refinedProducts.map(product => (
+          return context.products.map(product => (
             <Product product={product} key={product.id} />
           ));
         }}
-      </Collection.Consumer>
+      </ProductsConsumer>
     );
   }
 }
