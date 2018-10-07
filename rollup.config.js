@@ -4,6 +4,14 @@ import babel from "rollup-plugin-babel";
 import bundleSize from "rollup-plugin-bundle-size";
 import pkg from "./package.json";
 
+const peerDeps = [
+  "react",
+  "react-apollo",
+  "graphql-tag",
+  "apollo-boost",
+  "styled-components"
+];
+
 export default [
   // browser-friendly UMD build
   {
@@ -24,7 +32,7 @@ export default [
       }),
       bundleSize()
     ],
-    external: ["react", "react-apollo", "graphql-tag", "apollo-boost"]
+    external: peerDeps
   },
 
   // CommonJS (for Node) and ES module (for bundlers) build.
@@ -48,6 +56,6 @@ export default [
       }),
       bundleSize()
     ],
-    external: ["react", "react-apollo", "graphql-tag", "apollo-boost"]
+    external: peerDeps
   }
 ];
