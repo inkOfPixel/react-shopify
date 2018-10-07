@@ -10,10 +10,29 @@ const modifyBundlerConfig = config => {
 };
 
 export default {
+  src: "./docs",
+  wrapper: "docs/wrapper",
   modifyBundlerConfig,
+  htmlContext: {
+    head: {
+      links: [
+        {
+          rel: "stylesheet",
+          href: "https://codemirror.net/theme/oceanic-next.css"
+        }
+      ]
+    }
+  },
   themeConfig: {
+    codemirrorTheme: "oceanic-next",
+    logo: {
+      src:
+        "https://raw.githubusercontent.com/inkOfPixel/react-shopify/master/resources/react-shopify-logo.png",
+      width: 200
+    },
     colors: {
-      primary: "#61dafb"
+      primary: "#61dafb",
+      grayDark: "red"
     }
   },
   typescript: true
