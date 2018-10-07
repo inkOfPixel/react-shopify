@@ -10,8 +10,8 @@ const modifyBundlerConfig = config => {
 };
 
 export default {
-  src: "./docs",
-  dest: "/www",
+  src: "./src/docs",
+  dest: "/docs",
   wrapper: "docs/wrapper",
   modifyBundlerConfig,
   htmlContext: {
