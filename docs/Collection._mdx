@@ -1,0 +1,24 @@
+---
+name: Collection
+menu: Components
+---
+
+import { Playground, PropsTable } from "docz";
+import {}
+
+# Collection
+
+Provides collection context to its children
+
+<PropsTable of={Collection} />
+
+## Basic usage
+
+<Playground>
+  <Storefront
+    accessToken="078bc5caa0ddebfa89cccb4a1baa1f5c"
+    url="https://graphql.myshopify.com/api/graphql"
+  >
+    <Collection handle="summer-collection">All library components here</Collection>
+  </Storefront>
+</Playground>

@@ -1,0 +1,24 @@
+---
+name: Storefront
+menu: Components
+---
+
+import { Playground, PropsTable } from "docz";
+import Storefront from "./";
+
+# Storefront
+
+Provides store context to its children. You should put this at the root of your app.
+
+<PropsTable of={Storefront} />
+
+## Basic usage
+
+<Playground>
+  <Storefront
+    accessToken="078bc5caa0ddebfa89cccb4a1baa1f5c"
+    url="https://graphql.myshopify.com/api/graphql"
+  >
+    Your app here
+  </Storefront>
+</Playground>
