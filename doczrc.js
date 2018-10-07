@@ -31,8 +31,7 @@ export default {
       width: 200
     },
     colors: {
-      primary: "#61dafb",
-      grayDark: "red"
+      primary: "#61dafb"
     }
   },
   typescript: true

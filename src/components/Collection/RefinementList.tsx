@@ -85,14 +85,14 @@ export default class RefinementList extends React.Component<IProps, {}> {
                   <input
                     type="checkbox"
                     name={`RefinementList.${name}`}
-                    id={`RefinementList.${name}`}
+                    id={`RefinementList.${name}.${label.value}`}
                     value={label.value}
                     checked={label.isRefined}
                     onChange={event =>
                       context.refine(event.currentTarget.value)
                     }
                   />
-                  <label htmlFor={`RefinementList.${name}`}>
+                  <label htmlFor={`RefinementList.${name}.${label.value}`}>
                     {label.value} ({label.count})
                   </label>
                 </div>

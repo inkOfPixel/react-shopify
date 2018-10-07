@@ -1100,6 +1100,14 @@
   resolved "https://registry.yarnpkg.com/@types/semver/-/semver-5.5.0.tgz#146c2a29ee7d3bae4bf2fcb274636e264c813c45"
   integrity sha512-41qEJgBH/TWgo5NFSvBCJ1qkoi3Q6ONSF2avrHq1LVEZfYpdHmj0y9SuTK+u9ZhG1sYQKBL1AWXKyLWP4RaUoQ==
 
+"@types/styled-components@3.0.1":
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/@types/styled-components/-/styled-components-3.0.1.tgz#0f591a38e005aeb10687e85eb078c92d9b988ed1"
+  integrity sha512-H9RYkx3jQnL1VCvIie8dXQAnpgEgOMUnvuOy6B7DMiNal2gLdY6/aT1BHptxXxH/CVdWk/K8ouk78AtSK84yYw==
+  dependencies:
+    "@types/node" "*"
+    "@types/react" "*"
+
 "@types/zen-observable@^0.8.0":
   version "0.8.0"
   resolved "https://registry.yarnpkg.com/@types/zen-observable/-/zen-observable-0.8.0.tgz#8b63ab7f1aa5321248aad5ac890a485656dcea4d"

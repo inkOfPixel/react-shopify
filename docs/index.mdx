@@ -14,11 +14,11 @@ React Shopify is a component library that aims to make dead simple to create cus
 ## Install
 
 ```bash
-yarn add -E react-shopify graphql graphql-tag apollo-boost react-apollo
+yarn add -E react-shopify graphql graphql-tag apollo-boost react-apollo styled-components@beta
 ```
 
 ```bash
-npm i -E react-shopify graphql graphql-tag apollo-boost react-apollo
+npm i -E react-shopify graphql graphql-tag apollo-boost react-apollo styled-components@beta
 ```
 
 React Shopify requires React 16.3+ as it uses new React Context API.
@@ -56,6 +56,10 @@ React Shopify requires React 16.3+ as it uses new React Context API.
           <h2>Sorting</h2>
           <Collection.SortBy />
         </div>
+      </div>
+      <div>
+        <Collection.ClearAllRefinements />
+        <Collection.CurrentRefinements />
       </div>
       <Collection.Products />
     </Collection>

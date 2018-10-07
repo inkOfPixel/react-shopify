@@ -16,6 +16,9 @@ import {
 import RefinementList from "./RefinementList";
 import Products from "./Products";
 import SortBy from "./SortBy";
+import CurrentRefinements from "./CurrentRefinements";
+import ClearAllRefinements from "./ClearAllRefinements";
+import { hasRefinements } from "./utils";
 import { assertNever } from "../../utils";
 
 type Partial<T> = { [P in keyof T]?: T[P] };
@@ -71,6 +74,8 @@ export default class Collection extends React.Component<IProps, IState> {
   static RefinementList = RefinementList;
   static Products = Products;
   static SortBy = SortBy;
+  static CurrentRefinements = CurrentRefinements;
+  static ClearAllRefinements = ClearAllRefinements;
 
   static sortByOptions = sortByOptions;
 
@@ -193,6 +198,15 @@ class CollectionImpl extends React.Component<IImplProps, IImplState> {
     }));
   };
 
+  clearAll = () => {
+    this.setState(currentState => ({
+      collectionState: {
+        ...currentState.collectionState,
+        refinements: {}
+      }
+    }));
+  };
+
   changeSortBy = (sortBy: SortByOption) => {
     const { handle, limit } = this.props;
     const { key: sortKey, reverse } = Collection.sortByOptions[sortBy];
@@ -235,6 +249,7 @@ class CollectionImpl extends React.Component<IImplProps, IImplState> {
       facets,
       setRefinement: this.setRefinement,
       clearRefinement: this.clearRefinement,
+      clearAll: this.clearAll,
       changeSortBy: this.changeSortBy
     };
   };
@@ -243,17 +258,6 @@ class CollectionImpl extends React.Component<IImplProps, IImplState> {
     return <Provider value={this.getContext()}>{this.props.children}</Provider>;
   }
 }
-
-const hasRefinements = (refinements: Refinement[]): boolean => {
-  return refinements.some(refinement => {
-    switch (refinement.kind) {
-      case "list":
-        return refinement.labels.length > 0;
-      default:
-        return assertNever(refinement);
-    }
-  });
-};
 
 const buildIndex = (
   products: Array<Storefront.IProduct>,

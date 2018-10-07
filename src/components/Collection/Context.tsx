@@ -11,6 +11,7 @@ export interface ICollectionContext {
   facets: IFacetsByName;
   setRefinement: (refinement: Refinement) => void;
   clearRefinement: (name: string) => void;
+  clearAll: () => void;
   changeSortBy: (sortBy: SortByOption) => void;
 }
 

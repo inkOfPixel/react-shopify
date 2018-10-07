@@ -1,5 +1,4 @@
 import * as React from "react";
-import { keyBy } from "lodash-es";
 import { Consumer, SortByOption, sortByOptions } from "./Context";
 
 interface ISortByContext {
