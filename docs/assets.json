@@ -1,7 +1,7 @@
 {
-  "vendors.js": "/static/js/vendors.289dd490.js",
-  "app.js": "/static/js/app.7f3abef0.js",
-  "index.js": "/static/js/index.66a64521.js",
-  "runtime~app.js": "/static/js/runtime~app.52f70cd7ab1006aea505.js",
-  "index.html": "/index.html"
+  "vendors.js": "/react-shopify/static/js/vendors.3fb6b948.js",
+  "app.js": "/react-shopify/static/js/app.218dd1da.js",
+  "index.js": "/react-shopify/static/js/index.03bac086.js",
+  "runtime~app.js": "/react-shopify/static/js/runtime~app.f23cb6dca41e42c651cf.js",
+  "index.html": "/react-shopify/index.html"
 }

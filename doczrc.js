@@ -12,7 +12,8 @@ const modifyBundlerConfig = config => {
 export default {
   src: "./src/docs",
   dest: "/docs",
-  wrapper: "docs/wrapper",
+  base: "/react-shopify/",
+  wrapper: "src/docs/wrapper",
   modifyBundlerConfig,
   htmlContext: {
     head: {
