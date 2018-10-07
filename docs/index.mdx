@@ -5,7 +5,7 @@ route: /
 
 import { Playground, PropsTable } from "docz";
 import gql from "graphql-tag";
-import {Storefront, Collection, combine, productFacet} from "react-shopify";
+import {Storefront, Collection, Money, combine, productFacet} from "react-shopify";
 
 # React Shopify
 
@@ -30,6 +30,7 @@ React Shopify requires React 16.3+ as it uses new React Context API.
     accessToken="078bc5caa0ddebfa89cccb4a1baa1f5c"
     url="https://graphql.myshopify.com/api/graphql"
   >
+    <Money>24</Money>
     <Collection 
       handle="summer-collection"
       limit={20}
