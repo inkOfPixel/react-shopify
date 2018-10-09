@@ -1,6 +1,8 @@
 import * as React from "react";
 import ApolloClient from "apollo-boost";
 import { ApolloProvider } from "react-apollo";
+import { ThemeProvider } from "styled-components";
+import defaultTheme from "../themes/default";
 
 interface Props {
   children: React.ReactNode;
@@ -8,10 +10,12 @@ interface Props {
   accessToken: string;
   /** Endpoint of your store GraphQL API */
   url: string;
+  /** Pass your custom theme */
+  theme?: any;
 }
 
 export default class Storefront extends React.Component<Props, {}> {
-  static defaultProps = { url: "/api/graphql" };
+  static defaultProps = { url: "/api/graphql", theme: defaultTheme };
 
   client = new ApolloClient({
     uri: this.props.url,
@@ -25,7 +29,11 @@ export default class Storefront extends React.Component<Props, {}> {
   });
 
   render() {
-    const { children } = this.props;
-    return <ApolloProvider client={this.client}>{children}</ApolloProvider>;
+    const { children, theme } = this.props;
+    return (
+      <ThemeProvider theme={theme}>
+        <ApolloProvider client={this.client}>{children}</ApolloProvider>
+      </ThemeProvider>
+    );
   }
 }

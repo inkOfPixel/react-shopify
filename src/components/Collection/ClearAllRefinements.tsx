@@ -17,7 +17,7 @@ interface IProps {
   text?: string;
 }
 
-const ClearAllRefinementsConsumer = (props: IProps) => {
+const ClearAllRefinementsConsumer: React.SFC<IProps> = props => {
   return (
     <Consumer>
       {context => {

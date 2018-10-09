@@ -10,6 +10,7 @@
     "dev": "rollup -c -w",
     "docz:dev": "docz dev",
     "docz:build": "docz build",
+    "generate:types": "tsc --declaration  --noEmit false --outDir ./test --emitDeclarationOnly",
     "update:schema": "get-graphql-schema --json --header='X-Shopify-Storefront-Access-Token=078bc5caa0ddebfa89cccb4a1baa1f5c' https://graphql.myshopify.com/api/graphql | gql2ts -n Storefront -o src/storefront.d.ts",
     "prebuild": "rimraf dist",
     "release": "yarn build && np --yolo",
