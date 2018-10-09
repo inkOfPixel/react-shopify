@@ -68,8 +68,8 @@ export interface IRange {
 
 export const sortByOptions = {
   MANUAL: { key: "MANUAL", reverse: false },
-  BEST_SELLING: { key: "BEST_SELLING", reverse: true },
-  LEAST_SELLING: { key: "BEST_SELLING", reverse: false },
+  BEST_SELLING: { key: "BEST_SELLING", reverse: false },
+  LEAST_SELLING: { key: "BEST_SELLING", reverse: true },
   TITLE_ASCENDING: { key: "TITLE", reverse: true },
   TITLE_DESCENDING: { key: "TITLE", reverse: false },
   PRICE_ASCENDING: { key: "PRICE", reverse: false },
