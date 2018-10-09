@@ -318,6 +318,7 @@ const getRefinedIdsByFacet = (
           break;
         }
         default:
+          // @ts-ignore
           return assertNever(refinement);
       }
       return idsByFacet;

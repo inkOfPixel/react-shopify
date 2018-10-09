@@ -7,6 +7,7 @@ export const hasRefinements = (refinements: Refinement[]): boolean => {
       case "list":
         return refinement.labels.length > 0;
       default:
+        // @ts-ignore
         return assertNever(refinement);
     }
   });

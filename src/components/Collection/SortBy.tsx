@@ -46,7 +46,7 @@ export default class SortBy extends React.Component<IProps, {}> {
             <select
               value={context.selectedOption}
               onChange={event =>
-                context.changeSortBy(event.currentTarget.value)
+                context.changeSortBy(event.currentTarget.value as SortByOption)
               }
             >
               {context.options.map(option => {

@@ -20,43 +20,43 @@ interface IFormatOptions {
 
 const moneyFormatRegExp = /\{\{\s*(\w+)\s*\}\}/;
 
-/** The `Money` component provides the logic to render a formatted money amount according to store setting. */
-class Money extends React.Component<IProps> {
-  static query = gql`
-    query MoneyQuery {
-      shop {
-        moneyFormat
-      }
+const query = gql`
+  query MoneyQuery {
+    shop {
+      moneyFormat
     }
-  `;
-
-  format = memoizeOne((moneyFormat: string) => (value: string) =>
-    format(parseFloat(value) * 100, moneyFormat)
-  );
-
-  render() {
-    const { children, defaultMoneyFormat } = this.props;
-    return (
-      <Query query={Money.query}>
-        {query => {
-          const { data } = query;
-          if (data && data.shop && data.shop.moneyFormat) {
-            return typeof children === "function"
-              ? children(this.format(data.shop.moneyFormat))
-              : format(parseFloat(children) * 100, data.shop.moneyFormat);
-          } else if (typeof defaultMoneyFormat === "string") {
-            return typeof children === "function"
-              ? children(this.format(defaultMoneyFormat))
-              : format(parseFloat(children) * 100, defaultMoneyFormat);
-          }
-          return null;
-        }}
-      </Query>
-    );
   }
-}
+`;
 
-const format = (cents: number, format: string = "${{amount}}") => {
+/** The `Money` component provides the logic to render a formatted money amount according to store setting. */
+const Money = ({ children, defaultMoneyFormat }: IProps) => {
+  return (
+    <Query query={query}>
+      {query => {
+        const { data } = query;
+        if (data && data.shop && data.shop.moneyFormat) {
+          const format = createFormatFunction(data.shop.moneyFormat);
+          return typeof children === "function"
+            ? children(format)
+            : format(children);
+        } else if (typeof defaultMoneyFormat === "string") {
+          const format = createFormatFunction(defaultMoneyFormat);
+          return typeof children === "function"
+            ? children(format)
+            : format(children);
+        }
+        return null;
+      }}
+    </Query>
+  );
+};
+
+const createFormatFunction = memoizeOne(
+  (moneyFormat: string) => (value: string) =>
+    _format(parseFloat(value) * 100, moneyFormat)
+);
+
+const _format = (cents: number, format: string = "${{amount}}") => {
   let formattedValue;
   let match = format.match(moneyFormatRegExp);
   if (match && match[1]) {

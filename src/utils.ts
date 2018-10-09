@@ -33,6 +33,7 @@ export const productFacet = (attribute: string) => (
     name: attribute,
     labels: [] as string[]
   };
+  // @ts-ignore
   const attributeValue: any = product[attribute];
   if (
     typeof attributeValue === "number" ||
