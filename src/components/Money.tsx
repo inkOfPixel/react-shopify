@@ -2,6 +2,7 @@ import * as React from "react";
 import { Query } from "react-apollo";
 import gql from "graphql-tag";
 import memoizeOne from "memoize-one";
+import { spawn } from "child_process";
 
 type RenderProp = (format: (value: string) => string) => React.ReactNode;
 
@@ -36,14 +37,18 @@ const Money = ({ children, defaultMoneyFormat }: IProps) => {
         const { data } = query;
         if (data && data.shop && data.shop.moneyFormat) {
           const format = createFormatFunction(data.shop.moneyFormat);
-          return typeof children === "function"
-            ? children(format)
-            : format(children);
+          return typeof children === "function" ? (
+            children(format)
+          ) : (
+            <span dangerouslySetInnerHTML={{ __html: format(children) }} />
+          );
         } else if (typeof defaultMoneyFormat === "string") {
           const format = createFormatFunction(defaultMoneyFormat);
-          return typeof children === "function"
-            ? children(format)
-            : format(children);
+          return typeof children === "function" ? (
+            children(format)
+          ) : (
+            <span dangerouslySetInnerHTML={{ __html: format(children) }} />
+          );
         }
         return null;
       }}
