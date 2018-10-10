@@ -320,7 +320,7 @@ class CollectionImpl extends React.Component<IImplProps, ICollectionState> {
     const index = buildIndex(products, getFacets);
     let refinedIdsByFacet = {} as IRefinedIdsByFacet;
     let refinedIds = null;
-    if (hasRefinements(refinementsList)) {
+    if (hasRefinements(refinementsList) && products.length > 0) {
       refinedIdsByFacet = getRefinedIdsByFacet(index, refinementsList);
       refinedIds = intersection(...map(refinedIdsByFacet));
     }
