@@ -2,8 +2,6 @@ import * as React from "react";
 import { Query } from "react-apollo";
 import gql from "graphql-tag";
 import memoizeOne from "memoize-one";
-import { spawn } from "child_process";
-import { divide } from "lodash-es";
 
 type RenderProp = (format: (value: string) => string) => React.ReactNode;
 

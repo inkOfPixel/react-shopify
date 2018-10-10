@@ -45,13 +45,13 @@
     "lodash-es": "4.17.11"
   },
   "peerDependencies": {
-    "apollo-boost": "0.1.15",
-    "graphql": "14.0.0",
-    "graphql-tag": "2.9.2",
+    "apollo-boost": ">=0.1.15",
+    "graphql": ">=14.0.0",
+    "graphql-tag": ">=2.9.2",
     "react": ">=16.3.0",
-    "react-apollo": "2.1.11",
+    "react-apollo": ">=2.1.11",
     "react-dom": ">=16.3.0",
-    "styled-components": "4.0.0-beta.10"
+    "styled-components": ">=4.0.0-beta.10"
   },
   "devDependencies": {
     "@babel/core": "7.1.2",
