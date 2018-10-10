@@ -109,7 +109,6 @@ export default class Collection extends React.Component<IProps, {}> {
       this.props.sortBy ||
       this.props.initialSortBy ||
       CollectionImpl.defaultProps.initialSortBy;
-    console.log(this.props, sortBy);
     return Collection.sortByOptions[sortBy];
   }
 
@@ -122,7 +121,6 @@ export default class Collection extends React.Component<IProps, {}> {
       ...otherProps
     } = this.props;
     const { key, reverse } = this.getInitialSortByOptions();
-    console.log(key, reverse);
     return (
       <Query
         query={getQuery({ productFragment })}
