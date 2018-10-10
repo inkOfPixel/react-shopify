@@ -10,6 +10,7 @@ import {
   ICollectionState,
   SortByOption,
   Refinement,
+  IRefinementMap,
   IFacetsByName,
   sortByOptions
 } from "./Context";
@@ -22,7 +23,10 @@ import { hasRefinements } from "./utils";
 import { assertNever } from "../../utils";
 import { IFacet, FacetExtractor } from "../../types";
 
-type Partial<T> = { [P in keyof T]?: T[P] };
+enum StateChangeType {
+  updateRefinement = "__update_refinement__",
+  updateSortBy = "__update_sort_by__"
+}
 
 interface QueryVariables {
   handle: string;
@@ -32,20 +36,28 @@ interface QueryVariables {
 }
 
 interface IProps {
-  children: React.ReactNode;
   /** Shopify collection handle */
   handle: string;
   /** Number of products to be fetched at a time */
-  limit?: number;
+  limit: number;
   /** Get refinement values of a product. You can return either a value or an array of values */
   getFacets?: FacetExtractor;
-  /** By default it fetches only id and title */
-  productFragment?: string;
-  /** You can use this to setup the initial state. All the keys are optional */
-  initialCollectionState?: Partial<ICollectionState>;
+  /** A graphql fragment returned by gql tag. By default it fetches only id and title */
+  productFragment: any;
+  /** Set collection initial sort by */
+  initialSortBy?: SortByOption;
+  /** Control collection sorting */
+  sortBy?: SortByOption;
+  /** Set collection initial refinements */
+  initialRefinements?: IRefinementMap;
+  /** Control collection refinements */
+  refinements?: IRefinementMap;
+  /** Get notified when collection state changes. The changes parameters contains a type that identifies the type of change */
+  onStateChange?: <K extends keyof StateWithChangeType>(
+    changes: Pick<StateWithChangeType, K>,
+    currentState: ICollectionState
+  ) => void;
 }
-
-interface IState {}
 
 const getQuery = ({ productFragment }: { productFragment: any }) => gql`
   query CollectionQuery(
@@ -70,7 +82,7 @@ const getQuery = ({ productFragment }: { productFragment: any }) => gql`
   ${productFragment}
 `;
 
-export default class Collection extends React.Component<IProps, IState> {
+export default class Collection extends React.Component<IProps, {}> {
   static Consumer = Consumer;
   static RefinementList = RefinementList;
   static Products = Products;
@@ -79,6 +91,7 @@ export default class Collection extends React.Component<IProps, IState> {
   static ClearAllRefinements = ClearAllRefinements;
 
   static sortByOptions = sortByOptions;
+  static stateChangeTypes = StateChangeType;
 
   static defaultProps = {
     productFragment: gql`
@@ -88,50 +101,42 @@ export default class Collection extends React.Component<IProps, IState> {
         tags
       }
     `,
-    initialCollectionState: {
-      sortBy: SortByOption.Manual,
-      refinements: {}
-    },
     limit: 20
   };
 
-  getInitialCollectionState = (): ICollectionState => {
-    const initialCollectionState = this.props.initialCollectionState as Partial<
-      ICollectionState
-    >;
-    return {
-      ...Collection.defaultProps.initialCollectionState,
-      ...initialCollectionState
-    };
-  };
+  getInitialSortByOptions() {
+    const sortBy =
+      this.props.sortBy ||
+      this.props.initialSortBy ||
+      CollectionImpl.defaultProps.initialSortBy;
+    console.log(this.props, sortBy);
+    return Collection.sortByOptions[sortBy];
+  }
 
   render() {
     const {
       children,
       handle,
       limit,
-      initialCollectionState,
-      getFacets,
-      productFragment
+      productFragment,
+      ...otherProps
     } = this.props;
-    const { key, reverse } = Collection.sortByOptions[
-      (initialCollectionState as ICollectionState).sortBy
-    ];
+    const { key, reverse } = this.getInitialSortByOptions();
+    console.log(key, reverse);
     return (
       <Query
         query={getQuery({ productFragment })}
-        variables={{ handle, limit, sortKey: key, reverse } as QueryVariables}
+        variables={{ handle, limit, sortKey: key, reverse }}
       >
         {({ data, loading, error, refetch }) => (
           <CollectionImpl
             handle={handle}
-            initialCollectionState={this.getInitialCollectionState()}
             data={data}
             loading={loading}
             error={error}
             refetch={refetch}
             limit={limit}
-            getFacets={getFacets}
+            {...otherProps}
           >
             {children}
           </CollectionImpl>
@@ -143,17 +148,20 @@ export default class Collection extends React.Component<IProps, IState> {
 
 interface IImplProps {
   handle: string;
-  initialCollectionState: ICollectionState;
+  initialSortBy: SortByOption;
+  sortBy?: SortByOption;
+  initialRefinements: IRefinementMap;
+  refinements?: IRefinementMap;
   data: { shop?: Storefront.IShop };
   loading: boolean;
   error: ApolloError | undefined;
   limit?: number;
   refetch: QueryResult<Storefront.IQueryRoot, QueryVariables>["refetch"];
   getFacets?: (product: Storefront.IProduct) => Array<IFacet>;
-}
-
-interface IImplState {
-  collectionState: ICollectionState;
+  onStateChange: <K extends keyof StateWithChangeType>(
+    changes: Pick<StateWithChangeType, K>,
+    currentState: ICollectionState
+  ) => void;
 }
 
 interface IFacetsIndex {
@@ -164,59 +172,137 @@ interface IIdsByLabel {
   [label: string]: Array<string>;
 }
 
-class CollectionImpl extends React.Component<IImplProps, IImplState> {
+type StateWithChangeType = ICollectionState & { type: StateChangeType };
+
+class CollectionImpl extends React.Component<IImplProps, ICollectionState> {
   static defaultProps = {
-    getValues: () => []
+    initialSortBy: SortByOption.Manual,
+    initialRefinements: {},
+    onStateChange: () => {}
   };
 
-  state = {
-    collectionState: this.props.initialCollectionState
+  initialState = {
+    sortBy: this.props.initialSortBy,
+    refinements: this.props.initialRefinements
   };
+
+  state = this.initialState;
+
+  isControlled(prop: string) {
+    // @ts-ignore
+    return (this.props[prop] as any) !== undefined;
+  }
+
+  getState(state = this.state) {
+    return Object.entries(state).reduce(
+      (combinedState, [key, value]) => {
+        if (this.isControlled(key)) {
+          // @ts-ignore
+          combinedState[key] = this.props[key];
+        } else {
+          combinedState[key] = value;
+        }
+        return combinedState;
+      },
+      {} as ICollectionState
+    );
+  }
+
+  internalSetState<K extends keyof StateWithChangeType>(
+    changes:
+      | ((
+          prevState: Readonly<ICollectionState>,
+          props: Readonly<IImplProps>
+        ) => Pick<StateWithChangeType, K> | StateWithChangeType | null)
+      | (Pick<StateWithChangeType, K> | StateWithChangeType | null),
+    callback = () => {}
+  ) {
+    let allChanges: Pick<StateWithChangeType, K>;
+    this.setState(
+      (state, props) => {
+        const combinedState = this.getState(state);
+        const changesObject =
+          typeof changes === "function"
+            ? changes(combinedState, props)
+            : changes;
+
+        if (!changesObject) {
+          return null;
+        }
+        allChanges = changesObject;
+        const {
+          type: ignoredType,
+          ...onlyChanges
+        } = changesObject as StateWithChangeType;
+
+        const nonControlledChanges = Object.entries(onlyChanges).reduce(
+          (newChanges, [key, value]) => {
+            if (!this.isControlled(key)) {
+              newChanges[key] = value;
+            }
+            return newChanges;
+          },
+          {} as Pick<ICollectionState, K>
+        );
+
+        return Object.keys(nonControlledChanges).length
+          ? nonControlledChanges
+          : null;
+      },
+      () => {
+        this.props.onStateChange(allChanges, this.getState());
+        callback();
+      }
+    );
+  }
+
+  componentDidUpdate(prevProps: IImplProps, prevState: ICollectionState) {
+    if (this.getState().sortBy !== this.getState(prevState).sortBy) {
+      const { handle, limit } = this.props;
+      const { key: sortKey, reverse } = Collection.sortByOptions[
+        this.state.sortBy
+      ];
+      this.props.refetch({ handle, limit, sortKey, reverse });
+    }
+  }
 
   setRefinement = (refinement: Refinement) => {
-    this.setState(currentState => ({
-      collectionState: {
-        ...currentState.collectionState,
+    if (refinement.labels.length > 0) {
+      this.internalSetState(currentState => ({
+        type: StateChangeType.updateRefinement,
         refinements: {
-          ...currentState.collectionState.refinements,
+          ...currentState.refinements,
           [refinement.name]: refinement
         }
-      }
-    }));
+      }));
+    } else {
+      this.clearRefinement(refinement.name);
+    }
   };
 
   clearRefinement = (name: string) => {
-    this.setState(currentState => ({
-      collectionState: {
-        ...currentState.collectionState,
-        refinements: pickBy(
-          currentState.collectionState.refinements,
-          (refinement, _name) => {
-            return _name !== name;
-          }
-        )
-      }
+    this.internalSetState(currentState => ({
+      type: StateChangeType.updateRefinement,
+      refinements: pickBy(
+        currentState.refinements,
+        (ignoredRefinement, _name) => {
+          return _name !== name;
+        }
+      )
     }));
   };
 
   clearAll = () => {
-    this.setState(currentState => ({
-      collectionState: {
-        ...currentState.collectionState,
-        refinements: {}
-      }
+    this.internalSetState(currentState => ({
+      type: StateChangeType.updateRefinement,
+      refinements: {}
     }));
   };
 
   changeSortBy = (sortBy: SortByOption) => {
-    const { handle, limit } = this.props;
-    const { key: sortKey, reverse } = Collection.sortByOptions[sortBy];
-    this.props.refetch({ handle, limit, sortKey, reverse });
-    this.setState(currentState => ({
-      collectionState: {
-        ...currentState.collectionState,
-        sortBy
-      }
+    this.internalSetState(currentState => ({
+      type: StateChangeType.updateSortBy,
+      sortBy
     }));
   };
 
@@ -230,19 +316,20 @@ class CollectionImpl extends React.Component<IImplProps, IImplState> {
 
   getContext = (): ICollectionContext => {
     const { loading, error, getFacets } = this.props;
-    const { collectionState } = this.state;
-    const refinements = map(collectionState.refinements);
+    const { refinements, sortBy } = this.getState();
+    const refinementsList = map(refinements);
     const products = this.getProducts();
     const index = buildIndex(products, getFacets);
     let refinedIdsByFacet = {} as IRefinedIdsByFacet;
     let refinedIds = null;
-    if (hasRefinements(refinements)) {
-      refinedIdsByFacet = getRefinedIdsByFacet(index, refinements);
+    if (hasRefinements(refinementsList)) {
+      refinedIdsByFacet = getRefinedIdsByFacet(index, refinementsList);
       refinedIds = intersection(...map(refinedIdsByFacet));
     }
-    const facets = getFacetsByName(index, refinedIdsByFacet, refinements);
+    const facets = getFacetsByName(index, refinedIdsByFacet, refinementsList);
     return {
-      collectionState,
+      refinements,
+      sortBy,
       loading,
       error,
       products,
@@ -303,7 +390,6 @@ const getRefinedIdsByFacet = (
           }
           switch (operator) {
             case "or":
-              console.log("index and ref", index, refinement);
               idsByFacet[refinement.name] = union(
                 ...refinement.labels.map(label => index[refinement.name][label])
               );

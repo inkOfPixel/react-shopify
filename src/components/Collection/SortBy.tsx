@@ -11,7 +11,7 @@ interface ISortByContext {
 type RenderProp = (context: ISortByContext) => React.ReactNode;
 
 interface IProps {
-  children: React.ReactNode | RenderProp;
+  children: RenderProp;
 }
 
 const SortByConsumer = (props: IProps) => {
@@ -25,7 +25,7 @@ const SortByConsumer = (props: IProps) => {
         return props.children({
           loading,
           options: Object.keys(sortByOptions),
-          selectedOption: context.collectionState.sortBy,
+          selectedOption: context.sortBy,
           changeSortBy
         });
       }}

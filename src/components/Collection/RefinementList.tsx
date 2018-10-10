@@ -11,7 +11,7 @@ interface IRefinementListContext {
 type RenderProp = (context: IRefinementListContext) => React.ReactNode;
 
 interface IProps {
-  children: React.ReactNode | RenderProp;
+  children: RenderProp;
   name: string;
   operator?: "or" | "and";
 }
@@ -24,7 +24,7 @@ const RefinementListConsumer = (props: IProps) => {
           return null;
         }
         let currentRefinement: string[] = [];
-        const refinement = context.collectionState.refinements[props.name];
+        const refinement = context.refinements[props.name];
         if (refinement) {
           if (refinement.kind === "list") {
             currentRefinement = refinement.labels;

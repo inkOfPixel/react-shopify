@@ -13,7 +13,7 @@ interface IClearAllRefinementsContext {
 type RenderProp = (context: IClearAllRefinementsContext) => React.ReactNode;
 
 interface IProps {
-  children: React.ReactNode | RenderProp;
+  children: RenderProp;
   text?: string;
 }
 
@@ -26,9 +26,7 @@ const ClearAllRefinementsConsumer: React.SFC<IProps> = props => {
         }
         return props.children({
           loading: context.loading,
-          hasRefinements: hasRefinements(
-            map(context.collectionState.refinements)
-          ),
+          hasRefinements: hasRefinements(map(context.refinements)),
           clearAll: context.clearAll
         });
       }}

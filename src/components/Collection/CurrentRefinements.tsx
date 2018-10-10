@@ -12,7 +12,7 @@ interface ICurrentRefinementsContext {
 type RenderProp = (context: ICurrentRefinementsContext) => React.ReactNode;
 
 interface IProps {
-  children: React.ReactNode | RenderProp;
+  children: RenderProp;
 }
 
 const CurrentRefinementsConsumer = (props: IProps) => {
@@ -25,11 +25,11 @@ const CurrentRefinementsConsumer = (props: IProps) => {
         return props.children({
           loading: context.loading,
           currentRefinements: map(
-            context.collectionState.refinements,
+            context.refinements,
             (refinement: Refinement) => refinement
           ),
           clear: (name: string, value: string) => {
-            const refinement = context.collectionState.refinements[name];
+            const refinement = context.refinements[name];
             if (!refinement) {
               throw new Error(
                 `Can't clear refinement on ${name}: No such refinement found`

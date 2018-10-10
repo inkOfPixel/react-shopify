@@ -36,6 +36,8 @@ React Shopify requires React 16.3+ as it uses new React Context API.
     <Collection 
       handle="summer-collection"
       limit={20}
+      initialSortBy="BEST_SELLING"
+      sortBy="MANUAL"
       productFragment={gql`
         fragment CollectionProduct on Product {
           id
@@ -45,6 +47,9 @@ React Shopify requires React 16.3+ as it uses new React Context API.
         }
       `}
       getFacets={combine([productFacet("tags"), productFacet("vendor")])}
+      onStateChange={(changes, state) => {
+        console.log("State changed", changes, state)
+      }}
     >
       <div style={{ display: "flex" }}>
         <div>

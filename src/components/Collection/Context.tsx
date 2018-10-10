@@ -3,7 +3,8 @@ import { ApolloError } from "apollo-boost";
 import { createNamedContext } from "../../utils";
 
 export interface ICollectionContext {
-  collectionState: ICollectionState;
+  sortBy: SortByOption;
+  refinements: IRefinementMap;
   loading: boolean;
   error: ApolloError | undefined;
   products: Array<Storefront.IProduct>;
@@ -28,6 +29,7 @@ export interface ILabel {
 export interface ICollectionState {
   sortBy: SortByOption;
   refinements: IRefinementMap;
+  [field: string]: SortByOption | IRefinementMap;
 }
 
 export enum SortByOption {
@@ -42,7 +44,7 @@ export enum SortByOption {
   OldestFirst = "OLDEST_FIRST"
 }
 
-interface IRefinementMap {
+export interface IRefinementMap {
   [name: string]: Refinement;
 }
 

@@ -14,7 +14,7 @@ interface IProductProps {
 }
 
 interface IProps {
-  children: React.ReactNode | RenderProp;
+  children: RenderProp;
   /** Provide your custom product item component */
   productComponent?: React.ComponentType<IProductProps>;
 }
