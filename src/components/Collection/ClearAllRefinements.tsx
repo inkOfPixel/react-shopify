@@ -14,6 +14,7 @@ type RenderProp = (context: IClearAllRefinementsContext) => React.ReactNode;
 
 interface IProps {
   children: RenderProp;
+  onClick?: (event: any) => void;
 }
 
 const ClearAllRefinementsConsumer: React.SFC<IProps> = props => {
@@ -35,7 +36,7 @@ const ClearAllRefinementsConsumer: React.SFC<IProps> = props => {
 
 export default class ClearAllRefinements extends React.Component<IProps, {}> {
   render() {
-    const { children } = this.props;
+    const { children, onClick, ...other } = this.props;
     return (
       <ClearAllRefinementsConsumer>
         {context => {
@@ -44,7 +45,17 @@ export default class ClearAllRefinements extends React.Component<IProps, {}> {
           }
           if (context.hasRefinements) {
             return (
-              <ClearAllButton onClick={context.clearAll}>
+              <ClearAllButton
+                onClick={
+                  onClick
+                    ? event => {
+                        onClick(event);
+                        context.clearAll();
+                      }
+                    : context.clearAll
+                }
+                {...other}
+              >
                 {children}
               </ClearAllButton>
             );
