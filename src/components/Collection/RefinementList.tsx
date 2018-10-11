@@ -34,10 +34,11 @@ const RefinementListConsumer = (props: IProps) => {
             );
           }
         }
+        const labels = context.facets[props.name];
         return props.children({
           loading: context.loading,
           currentRefinement,
-          labels: context.facets[props.name] ? context.facets[props.name] : [],
+          labels: labels ? labels : [],
           refine: value => {
             let newRefinement: IRefinementList;
             let newRefinementLabels;

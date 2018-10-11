@@ -17,7 +17,7 @@ export interface ICollectionContext {
 }
 
 export interface IFacetsByName {
-  [name: string]: Array<ILabel>;
+  [name: string]: Array<ILabel> | undefined;
 }
 
 export interface ILabel {

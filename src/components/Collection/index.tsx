@@ -19,6 +19,7 @@ import Products from "./Products";
 import SortBy from "./SortBy";
 import CurrentRefinements from "./CurrentRefinements";
 import ClearAllRefinements from "./ClearAllRefinements";
+import Menu from "./Menu";
 import { hasRefinements } from "./utils";
 import { assertNever } from "../../utils";
 import { IFacet, FacetExtractor } from "../../types";
@@ -84,9 +85,10 @@ const getQuery = ({ productFragment }: { productFragment: any }) => gql`
 
 export default class Collection extends React.Component<IProps, {}> {
   static Consumer = Consumer;
-  static RefinementList = RefinementList;
   static Products = Products;
   static SortBy = SortBy;
+  static RefinementList = RefinementList;
+  static Menu = Menu;
   static CurrentRefinements = CurrentRefinements;
   static ClearAllRefinements = ClearAllRefinements;
 
