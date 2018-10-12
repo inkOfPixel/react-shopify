@@ -5,7 +5,7 @@ route: /
 
 import { Playground, PropsTable } from "docz";
 import gql from "graphql-tag";
-import {Storefront, Collection, Money, combine, productFacet} from "react-shopify";
+import {Storefront, Collection, Money, combine, productFacet, variantOptionFacet} from "react-shopify";
 
 # React Shopify
 
@@ -44,17 +44,28 @@ React Shopify requires React 16.3+ as it uses new React Context API.
           title
           tags
           vendor
+          variants(first: 250) {
+            edges {
+              node {
+                id
+                selectedOptions {
+                  name
+                  value
+                }
+              }
+            }
+          }
         }
       `}
-      getFacets={combine([productFacet("tags"), productFacet("vendor")])}
+      getFacets={combine([productFacet("tags"), productFacet("vendor"), variantOptionFacet("Color")])}
       onStateChange={(changes, state) => {
         console.log("State changed", changes, state)
       }}
     >
       <div style={{ display: "flex" }}>
         <div>
-          <h2>Tags</h2>
-          <Collection.RefinementList name="tags" />
+          <h2>Color</h2>
+          <Collection.RefinementList name="Color" />
         </div>
         <div>
           <h2>Vendor</h2>
@@ -70,6 +81,9 @@ React Shopify requires React 16.3+ as it uses new React Context API.
         <Collection.CurrentRefinements />
       </div>
       <Collection.Products />
+      <Collection.Products>
+        {context => console.log(context)}
+      </Collection.Products>
     </Collection>
   </Storefront>
 </Playground>

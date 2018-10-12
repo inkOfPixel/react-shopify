@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import { groupBy, flatten, map, union } from "lodash-es";
+import { groupBy, flatten, map, union, get } from "lodash-es";
 import { IFacet, FacetExtractor } from "./types";
 
 export const createNamedContext = <T>(name: string, defaultValue?: T) => {
@@ -146,6 +146,40 @@ export const namedTagFacet = (name: string) => (
         .map(parseNamedTag)
         .filter(tag => tag !== null && tag.name === name)
         .map(tag => (tag as NamedTag).value.toString())
+    }
+  ];
+};
+
+export const variantOptionFacet = (optionName: string) => (
+  product: Storefront.IProduct
+): IFacet[] => {
+  const variantsEdges: Storefront.IProductVariantEdge[] | undefined = get(
+    product,
+    "variants.edges"
+  );
+  if (!variantsEdges) {
+    throw new Error(
+      `Can't extract variant option "${optionName}": Product fragment is missing variants`
+    );
+  }
+  const variants = variantsEdges.map(edge => edge.node);
+  return [
+    {
+      name: optionName,
+      labels: variants.reduce(
+        (labels, variant) => {
+          if (!variant.selectedOptions) {
+            throw new Error(
+              `Can't extract variant option ${optionName}: Product fragment is missing variant "selectedOptions"`
+            );
+          }
+          const facetOption = variant.selectedOptions.find(
+            option => option.name === optionName
+          );
+          return facetOption ? labels.concat(facetOption.value) : labels;
+        },
+        [] as string[]
+      )
     }
   ];
 };
