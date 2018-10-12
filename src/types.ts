@@ -3,4 +3,6 @@ export interface IFacet {
   labels: Array<string>;
 }
 
-export type FacetExtractor = (product: Storefront.IProduct) => IFacet[];
+export type FacetExtractor = (
+  product: Storefront.IProduct
+) => IFacet | IFacet[];

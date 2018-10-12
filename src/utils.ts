@@ -28,7 +28,7 @@ export const combine = (extractors: FacetExtractor[]) => (
 
 export const productFacet = (attribute: string) => (
   product: Storefront.IProduct
-): IFacet[] => {
+): IFacet => {
   const facet: IFacet = {
     name: attribute,
     labels: []
@@ -56,7 +56,7 @@ export const productFacet = (attribute: string) => (
   } else {
     throw new Error(`Can't refine on ${attribute}`);
   }
-  return [facet];
+  return facet;
 };
 
 type StringNamedTag = {
@@ -131,28 +131,26 @@ function parseNamedTag(tag: string): null | NamedTag {
 
 export const namedTagFacet = (name: string) => (
   product: Storefront.IProduct
-): IFacet[] => {
+): IFacet => {
   const tags = product.tags;
   if (!tags) {
     throw new Error(
       "Must request 'tags' in product fragment to be able to extract named tags"
     );
   }
-  return [
-    {
-      name,
-      labels: tags
-        .filter(isNamedTag)
-        .map(parseNamedTag)
-        .filter(tag => tag !== null && tag.name === name)
-        .map(tag => (tag as NamedTag).value.toString())
-    }
-  ];
+  return {
+    name,
+    labels: tags
+      .filter(isNamedTag)
+      .map(parseNamedTag)
+      .filter(tag => tag !== null && tag.name === name)
+      .map(tag => (tag as NamedTag).value.toString())
+  };
 };
 
 export const variantOptionFacet = (optionName: string) => (
   product: Storefront.IProduct
-): IFacet[] => {
+): IFacet => {
   const variantsEdges: Storefront.IProductVariantEdge[] | undefined = get(
     product,
     "variants.edges"
@@ -163,23 +161,21 @@ export const variantOptionFacet = (optionName: string) => (
     );
   }
   const variants = variantsEdges.map(edge => edge.node);
-  return [
-    {
-      name: optionName,
-      labels: variants.reduce(
-        (labels, variant) => {
-          if (!variant.selectedOptions) {
-            throw new Error(
-              `Can't extract variant option ${optionName}: Product fragment is missing variant "selectedOptions"`
-            );
-          }
-          const facetOption = variant.selectedOptions.find(
-            option => option.name === optionName
+  return {
+    name: optionName,
+    labels: variants.reduce(
+      (labels, variant) => {
+        if (!variant.selectedOptions) {
+          throw new Error(
+            `Can't extract variant option ${optionName}: Product fragment is missing variant "selectedOptions"`
           );
-          return facetOption ? labels.concat(facetOption.value) : labels;
-        },
-        [] as string[]
-      )
-    }
-  ];
+        }
+        const facetOption = variant.selectedOptions.find(
+          option => option.name === optionName
+        );
+        return facetOption ? labels.concat(facetOption.value) : labels;
+      },
+      [] as string[]
+    )
+  };
 };
