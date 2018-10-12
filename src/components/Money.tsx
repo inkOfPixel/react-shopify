@@ -8,6 +8,7 @@ type RenderProp = (format: (value: string) => string) => React.ReactNode;
 interface IProps {
   /** A string representing the money amount or a function that is called with the `format` function as an argument */
   children: string | RenderProp;
+  className?: string;
   /** A default money format, useful for statically render the component (e.g. `"${{amount}}"`) */
   defaultMoneyFormat?: string;
 }
@@ -29,7 +30,7 @@ const query = gql`
 `;
 
 /** The `Money` component provides the logic to render a formatted money amount according to store setting. */
-const Money = ({ children, defaultMoneyFormat }: IProps) => {
+const Money = ({ children, className, defaultMoneyFormat }: IProps) => {
   return (
     <Query query={query}>
       {query => {
@@ -39,14 +40,20 @@ const Money = ({ children, defaultMoneyFormat }: IProps) => {
           return typeof children === "function" ? (
             children(format)
           ) : (
-            <span dangerouslySetInnerHTML={{ __html: format(children) }} />
+            <span
+              className={className}
+              dangerouslySetInnerHTML={{ __html: format(children) }}
+            />
           );
         } else if (typeof defaultMoneyFormat === "string") {
           const format = createFormatFunction(defaultMoneyFormat);
           return typeof children === "function" ? (
             children(format)
           ) : (
-            <span dangerouslySetInnerHTML={{ __html: format(children) }} />
+            <span
+              className={className}
+              dangerouslySetInnerHTML={{ __html: format(children) }}
+            />
           );
         }
         return null;
