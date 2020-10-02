@@ -8,6 +8,8 @@ An opinionated library of React components built upon the Shopify Storefront API
 yarn add -E react-shopify
 ```
 
+> :warning: The project is still **EXPERIMENTAL** and currently not actively supported :warning:
+
 ## [Docs](https://inkofpixel.github.io/react-shopify/)
 
 **See the documentation at [inkofpixel.github.io/react-shopify](https://inkofpixel.github.io/react-shopify/)** for more information about React Shopify
